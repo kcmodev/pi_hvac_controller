@@ -6,42 +6,44 @@ import json
 def get_new_token():
     URL = 'https://www.googleapis.com/oauth2/v4/token'
 
-    PAYLOAD = {
+    DATA = {
         'client_id': config.CLIENT_ID,
         'client_secret': config.CLIENT_SECRET,
         'refresh_token': config.REFRESH_TOKEN,
         'grant_type': 'refresh_token'
     }
 
-    r = requests.post(url=URL, data=PAYLOAD)
-    r = r.json()
-    access_token = r['token_type'] + ' ' + r['access_token']
+    res = requests.post(url=URL, data=DATA)
+    res_json = res.json()
+    access_token = f'{res_json["token_type"]} {res_json["access_token"]}'
 
-    # print(f'data returned: \n {r}')
-    # print(f'NEW access token: \'{access_token}\'')
+    # print(f'data returned: \n {json.dumps(res_json, indent=2)}')
 
-    # return access_token
-    # get_thermostat_status(access_token)
     return access_token
 
 
-def get_thermostat_status(x):
+def get_thermostat_status(token):
     URL = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices/{config.DEVICE_ID}'
 
-    PAYLOAD = {
+    HEADERS = {
         'Content-Type': 'application/json',
-        'Authorization': x
+        'Authorization': token
     }
 
-    res = requests.get(URL, headers=PAYLOAD)
+    res = requests.get(URL, headers=HEADERS)
     res_json = res.json()
 
     # print(f'response: \n {json.dumps(res_json, indent=2)}')
 
     current_status = res_json['traits']['sdm.devices.traits.ThermostatHvac']['status']
 
-    print(f'hvac current status: {current_status}')
+    print(f'Current HVAC status: {current_status}')
+
+    return current_status
 
 
-new_token = get_new_token()
-get_thermostat_status(new_token)
+def run_thermostat_logic():
+    new_token = get_new_token()
+    hvac_status = get_thermostat_status(new_token)
+
+    return hvac_status

@@ -1,11 +1,6 @@
-from gpiozero import Motor, MotionSensor
-from signal import pause
-from time import sleep, localtime as lt, process_time as pt
-
-motor = Motor(forward=4, backward=14)
-pir_sensor = MotionSensor(26)
-prev_process_time = ''
-
+import thermostat_logic
+import motor_logic
+from time import sleep
 
 """
 TODO:
@@ -13,70 +8,25 @@ TODO:
 """
 
 
-def reset_sprayer():
-    print('Resetting the sprayer...')
-    motor.backward(speed=0.5)
-    sleep(0.1)
-    motor.stop()
+def check_hvac_status():
+    current_hvac_status = thermostat_logic.run_thermostat_logic()
 
-
-def cycle_sprayer_motor():
-    # fully cycles sprayer for num sprays
-    num_sprays = 2
-
-    for i in range(num_sprays):
-        print(f'Cycle {i+1} of {num_sprays}')
-        motor.forward(speed=0.5)
-        sleep(1)
-        motor.backward(speed=0.6)
-        sleep(0.3)
-        motor.stop()
-        sleep(1)
-
-
-def check_time(hours, proc_time):
-    # checks time to spray between the hours of
-    # 0700 and 2200
-    # also checks to cycle only once every 10 minutes
-    curr_process_time = proc_time
-
-    if 7 < hours < 22:
-        print('Currently daytime, cycling sprayer...')
-        process_time_diff = curr_process_time - prev_process_time
-
-        if process_time_diff <= 60:
-            print('No spray recently, spraying....')
-            prev_process_time = proc_time
-            # cycle_sprayer_motor()
-        else:
-            print(
-                f'Difference in time was only {process_time_diff}. NOT spraying...')
+    # cycle sprayer every 20 mins until no longer active
+    if current_hvac_status == 'COOLING' or current_hvac_status == 'HEATING':
+        print(
+            f'HVAC system \'{current_hvac_status}\'. Cycling air freshener...')
+        motor_logic.run_motor_logic()  # run air freshener logic
+        sleep(1200)  # wait 20 mins (1200 sec) before spraying again
     else:
-        print('Currently night time, NOT cycling sprayer...')
-
-
-def spray_the_can():
-    # detect how long it has been since it has sprayed
-
-    print("spraying the air freshener...")
-
-    curr_time = lt()
-    curr_hour = curr_time.tm_hour
-    curr_min = curr_time.tm_min
-
-    print(f'current time: {curr_hour}{curr_min}')
-
-    check_time(curr_hour, pt())
-
-    sleep(2)
-    pir_sensor.wait_for_motion()
+        # wait 60 secs to check again if no activity detected
+        sleep(60)
 
 
 if __name__ == "__main__":
-    reset_sprayer()  # set sprayer to starting position
-
     try:
-        pir_sensor.when_motion = spray_the_can
+        # main event loop
+        while True:  # check status every 60 seconds
+            check_hvac_status()
 
     except KeyboardInterrupt:
-        print('User interrupt detected. terminating...')
+        print('User interrupted. Terminating...')
