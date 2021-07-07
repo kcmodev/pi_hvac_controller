@@ -1,5 +1,5 @@
-import thermostat_logic
-import motor_logic
+from thermostat_logic import run_thermostat_logic
+from motor_logic import run_motor_logic
 from time import sleep
 
 """
@@ -9,13 +9,17 @@ TODO:
 
 
 def check_hvac_status():
-    current_hvac_status = thermostat_logic.run_thermostat_logic()
+    """
+    Checks status of thermostat. If heating or cooling it will actuate the air freshener motor
+    and then wait 20 minutes before returning to check the status again.
+    """
 
-    # cycle sprayer every 20 mins until no longer active
+    current_hvac_status = run_thermostat_logic()
+
     if current_hvac_status == 'COOLING' or current_hvac_status == 'HEATING':
         print(
             f'HVAC system \'{current_hvac_status}\'. Cycling air freshener...')
-        motor_logic.run_motor_logic()  # run air freshener logic
+        run_motor_logic()  # run air freshener logic
         sleep(1200)  # wait 20 mins (1200 sec) before spraying again
     else:
         # wait 60 secs to check again if no activity detected
