@@ -17,8 +17,8 @@ def get_new_token():
     r = r.json()
     access_token = r['token_type'] + ' ' + r['access_token']
 
-    print(f'data returned: \n {r}')
-    print(f'NEW access token: \'{access_token}\'')
+    # print(f'data returned: \n {r}')
+    # print(f'NEW access token: \'{access_token}\'')
 
     # return access_token
     # get_thermostat_status(access_token)
