@@ -26,10 +26,12 @@ def get_new_token():
     return access_token
 
 
-def get_thermostat_status(token):
+def get_thermostat_status():
     """
     Uses the access token to retrieve the current status of the thermostat.
     """
+
+    token = get_new_token()
 
     URL = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices/{config.DEVICE_ID}'
 
@@ -62,15 +64,12 @@ def run_fan_only():
 
     DATA = "{ 'command': 'sdm.devices.commands.Fan.SetTimer', 'params': { 'timerMode': 'ON', 'duration': '900s' } }"
 
-    res = requests.post(url=URL, headers=HEADERS, data=DATA)
-    res_json = res.json()
-    print(f'response: \n {json.dumps(res_json, indent=2)}')
+    requests.post(url=URL, headers=HEADERS, data=DATA)
 
     print('Fan running for 15 mins...')
 
 
 def run_thermostat_logic():
-    new_token = get_new_token()
-    hvac_status = get_thermostat_status(new_token)
+    hvac_status = get_thermostat_status()
 
     return hvac_status
