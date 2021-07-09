@@ -1,5 +1,6 @@
 # from gpiozero import Motor
-from time import localtime
+from time import localtime, sleep
+from .thermostat_logic import run_fan_only
 
 # motor = Motor(forward=4, backward=14)
 
@@ -10,7 +11,7 @@ from time import localtime
 
 
 # def reset_sprayer():
-#     print('Resetting the sprayer...')
+#     print('Resetting the sprayer to start position...')
 #     motor.backward(speed=0.5)
 #     sleep(0.1)
 #     motor.stop()
@@ -23,6 +24,7 @@ from time import localtime
 #     num_sprays = 1
 #     # TODO: Recheck speeds while using pwm and ensure actuating force is appropriate.
 
+#     print(f'Cycling air freshener motor...')
 #     for i in range(num_sprays):
 #         print(f'Cycle {i+1} of {num_sprays}')
 #         motor.forward(speed=0.5)
@@ -48,3 +50,10 @@ def check_time():
 def run_motor_logic():
     # reset_sprayer()
     check_time()
+
+
+def cycle_sprayer_manually():
+    print('Cycling sprayer manually...')
+    run_fan_only()
+    sleep(15)
+    # cycle_sprayer_motor()

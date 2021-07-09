@@ -1,5 +1,7 @@
-from thermostat_logic import run_thermostat_logic
-from motor_logic import run_motor_logic
+# from thermostat_logic import run_thermostat_logic
+# from motor_logic import run_motor_logic
+from pi_logic.thermostat_logic import run_thermostat_logic
+from pi_logic.motor_logic import run_motor_logic
 from time import sleep
 
 

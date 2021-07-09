@@ -1,5 +1,5 @@
 import requests
-import config
+from .. import config
 import json
 
 
@@ -48,6 +48,25 @@ def get_thermostat_status(token):
     print(f'Current HVAC status: {current_status}')
 
     return current_status
+
+
+def run_fan_only():
+    token = get_new_token()
+
+    URL = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices/{config.DEVICE_ID}:executeCommand'
+
+    HEADERS = {
+        'Content-Type': 'application/json',
+        'Authorization': token
+    }
+
+    DATA = "{ 'command': 'sdm.devices.commands.Fan.SetTimer', 'params': { 'timerMode': 'ON', 'duration': '900s' } }"
+
+    res = requests.post(url=URL, headers=HEADERS, data=DATA)
+    res_json = res.json()
+    print(f'response: \n {json.dumps(res_json, indent=2)}')
+
+    print('Fan running for 15 mins...')
 
 
 def run_thermostat_logic():
