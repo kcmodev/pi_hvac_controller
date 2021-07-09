@@ -10,29 +10,29 @@ from .thermostat_logic import run_fan_only
 # motor = Motor(forward=12, backward=13, pwm=True)
 
 
-# def reset_sprayer():
-#     print('Resetting the sprayer to start position...')
+def reset_sprayer():
+    print('Resetting the sprayer to start position...')
 #     motor.backward(speed=0.5)
 #     sleep(0.1)
 #     motor.stop()
 
 
-# def cycle_sprayer_motor():
-#     """
-#     Fully cycles sprayer motor for x number of cycles.
-#     """
-#     num_sprays = 1
+def cycle_sprayer_motor():
+    """
+    Fully cycles sprayer motor for x number of cycles.
+    """
+    num_sprays = 1
 #     # TODO: Recheck speeds while using pwm and ensure actuating force is appropriate.
 
-#     print(f'Cycling air freshener motor...')
-#     for i in range(num_sprays):
-#         print(f'Cycle {i+1} of {num_sprays}')
-#         motor.forward(speed=0.5)
-#         sleep(1)
-#         motor.backward(speed=0.6)
-#         sleep(0.3)
-#         motor.stop()
-#         sleep(1)
+    if check_time():
+        for i in range(num_sprays):
+            print(f'Cycle {i+1} of {num_sprays}')
+    #         motor.forward(speed=0.5)
+    #         sleep(1)
+    #         motor.backward(speed=0.5)
+    #         sleep(0.3)
+    #         motor.stop()
+    #         sleep(1)
 
 
 def check_time():
@@ -44,20 +44,13 @@ def check_time():
 
     if 7 < hours < 22:  # run between 7am and 10pm (2200 hrs)
         print('Currently daytime, cycling sprayer...')
-        # cycle_sprayer_motor()
+        return True
 
-
-def run_motor_logic():
-    # reset_sprayer()
-    check_time()
+    return False
 
 
 def cycle_sprayer_manually():
     print('Cycling sprayer manually...')
     run_fan_only()
     sleep(15)
-    # cycle_sprayer_motor()
-
-
-if __name__ == '__thermostat_logic__':
-    print('Resetting the sprayer to the starting position...')
+    cycle_sprayer_motor()

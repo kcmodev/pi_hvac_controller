@@ -67,9 +67,3 @@ def run_fan_only():
     requests.post(url=URL, headers=HEADERS, data=DATA)
 
     print('Fan running for 15 mins...')
-
-
-def run_thermostat_logic():
-    hvac_status = get_thermostat_status()
-
-    return hvac_status

@@ -1,5 +1,5 @@
-from pi_logic.thermostat_logic import run_thermostat_logic
-from pi_logic.motor_logic import run_motor_logic
+from pi_logic.thermostat_logic import get_thermostat_status
+from pi_logic.motor_logic import cycle_sprayer_motor
 from time import sleep
 
 
@@ -9,12 +9,13 @@ def check_hvac_status():
     and then wait 20 minutes before returning to check the status again.
     """
 
-    current_hvac_status = run_thermostat_logic()
+    current_hvac_status = get_thermostat_status()
+    current_hvac_status = 'COOLING'
 
     if current_hvac_status == 'COOLING' or current_hvac_status == 'HEATING':
         print(
-            f'HVAC system \'{current_hvac_status}\'. Cycling air freshener...')
-        run_motor_logic()  # run air freshener logic
+            f'HVAC system currently \'{current_hvac_status}\'. Cycling air freshener...')
+        cycle_sprayer_motor()  # run air freshener logic
         sleep(1200)  # wait 20 mins (1200 sec) before spraying again
     else:
         # wait 60 secs to check again if no activity detected
