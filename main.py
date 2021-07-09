@@ -2,11 +2,6 @@ from thermostat_logic import run_thermostat_logic
 from motor_logic import run_motor_logic
 from time import sleep
 
-"""
-TODO:
-    Determine length of time since it last sprayed
-"""
-
 
 def check_hvac_status():
     """
@@ -29,7 +24,7 @@ def check_hvac_status():
 if __name__ == "__main__":
     try:
         # main event loop
-        while True:  # check status every 60 seconds
+        while True:
             check_hvac_status()
 
     except KeyboardInterrupt:

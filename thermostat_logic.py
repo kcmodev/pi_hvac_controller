@@ -5,7 +5,7 @@ import json
 
 def get_new_token():
     """
-    Sends a post request to authenticate and retrieve the oauth access token
+    Sends a post request to authenticate and retrieve the oauth access token.
     """
 
     URL = 'https://www.googleapis.com/oauth2/v4/token'
@@ -28,7 +28,7 @@ def get_new_token():
 
 def get_thermostat_status(token):
     """
-    Uses the access token to retrieve the current status of the thermostat
+    Uses the access token to retrieve the current status of the thermostat.
     """
 
     URL = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices/{config.DEVICE_ID}'

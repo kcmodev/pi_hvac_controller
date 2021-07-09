@@ -3,7 +3,7 @@ from time import localtime
 
 # motor = Motor(forward=4, backward=14)
 
-# NOTE: Try this one next time, uses pwm
+# TODO: Try this one next time to use pwm instead
 # NOTE: Forward = GPIO 12 (PWM0)
 # NOTE: Backward = GPIO 13 (PWM1)
 # motor = Motor(forward=12, backward=13, pwm=True)
