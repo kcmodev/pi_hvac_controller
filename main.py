@@ -10,7 +10,6 @@ def check_hvac_status():
     """
 
     current_hvac_status = get_thermostat_status()
-    current_hvac_status = 'COOLING'
 
     if current_hvac_status == 'COOLING' or current_hvac_status == 'HEATING':
         print(

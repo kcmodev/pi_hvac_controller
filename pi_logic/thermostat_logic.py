@@ -1,9 +1,9 @@
 import requests
 import json
-from config_settings import config
 
 
 def get_new_token():
+    print(f'__name__: {__name__}')
     """
     Sends a post request to authenticate and retrieve the oauth access token.
     """
@@ -67,3 +67,13 @@ def run_fan_only():
     requests.post(url=URL, headers=HEADERS, data=DATA)
 
     print('Fan running for 15 mins...')
+
+
+if __name__ == 'pi_hvac_controller.pi_logic.thermostat_logic':
+    """
+    Corrects import to parent folder when importing with Flask from /venv/bin/activate.
+    """
+    from ..config_settings import config
+
+elif __name__ == 'pi_logic.thermostat_logic':
+    from config_settings import config
