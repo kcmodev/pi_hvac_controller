@@ -57,3 +57,7 @@ def cycle_sprayer_manually():
     run_fan_only()
     sleep(15)
     # cycle_sprayer_motor()
+
+
+if __name__ == '__thermostat_logic__':
+    print('Resetting the sprayer to the starting position...')

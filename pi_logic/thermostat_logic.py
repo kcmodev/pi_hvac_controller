@@ -1,6 +1,6 @@
 import requests
-from .. import config
 import json
+from config_settings import config
 
 
 def get_new_token():
