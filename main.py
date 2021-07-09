@@ -1,5 +1,5 @@
 from pi_logic.thermostat_logic import get_thermostat_status
-from pi_logic.motor_logic import cycle_sprayer_motor
+from pi_logic.motor_logic import cycle_sprayer_motor, reset_sprayer
 from time import sleep
 
 
@@ -23,6 +23,12 @@ def check_hvac_status():
 
 
 if __name__ == "__main__":
+    """
+    Resets sorayer to starting position and initiates event loop to monitor
+    HVAC system status.
+    """
+    reset_sprayer()
+
     try:
         # main event loop
         while True:
