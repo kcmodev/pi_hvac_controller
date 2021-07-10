@@ -1,5 +1,5 @@
 from flask import Flask, render_template
-from .pi_logic.motor_logic import cycle_sprayer_manually
+from pi_logic.motor_logic import cycle_sprayer_manually
 import json
 
 app = Flask(__name__)  # init flask app server
@@ -10,7 +10,7 @@ def index():
     """
     Renders landing page for user interaction.
     """
-
+    
     return render_template('index.html')
 
 
