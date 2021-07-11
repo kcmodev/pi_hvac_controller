@@ -3,7 +3,6 @@ import json
 
 
 def get_new_token():
-#     print(f'__name__: {__name__}')
     """
     Sends a post request to authenticate and retrieve the oauth access token.
     """
@@ -34,7 +33,6 @@ def get_thermostat_status():
     token = get_new_token()
 
     URL = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices/{config.DEVICE_ID}'
-    #URL = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices/'
 
     HEADERS = {
         'Content-Type': 'application/json',
@@ -68,7 +66,8 @@ def run_fan_only():
     requests.post(url=URL, headers=HEADERS, data=DATA)
 
     print('Fan running for 15 mins...')
-    
+
+
 def check_hvac_connectivity():
     token = get_new_token()
 
@@ -82,7 +81,7 @@ def check_hvac_connectivity():
     res = requests.get(url=URL, headers=HEADERS)
     print(f'res {res}')
     res_json = res.json()
-    
+
     print(f'connectivity data: \n {json.dumps(res_json, indent=2)}')
 
 
