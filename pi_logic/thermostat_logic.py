@@ -3,7 +3,7 @@ import json
 
 
 def get_new_token():
-    print(f'__name__: {__name__}')
+#     print(f'__name__: {__name__}')
     """
     Sends a post request to authenticate and retrieve the oauth access token.
     """
@@ -21,7 +21,7 @@ def get_new_token():
     res_json = res.json()
     access_token = f'{res_json["token_type"]} {res_json["access_token"]}'
 
-    # print(f'data returned: \n {json.dumps(res_json, indent=2)}')
+    print(f'token data: \n {json.dumps(res_json, indent=2)}')
 
     return access_token
 
@@ -34,6 +34,7 @@ def get_thermostat_status():
     token = get_new_token()
 
     URL = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices/{config.DEVICE_ID}'
+    #URL = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices/'
 
     HEADERS = {
         'Content-Type': 'application/json',
@@ -43,7 +44,7 @@ def get_thermostat_status():
     res = requests.get(URL, headers=HEADERS)
     res_json = res.json()
 
-    # print(f'response: \n {json.dumps(res_json, indent=2)}')
+    #print(f'hvac response: \n {json.dumps(res_json, indent=2)}')
 
     current_status = res_json['traits']['sdm.devices.traits.ThermostatHvac']['status']
 
@@ -67,6 +68,22 @@ def run_fan_only():
     requests.post(url=URL, headers=HEADERS, data=DATA)
 
     print('Fan running for 15 mins...')
+    
+def check_hvac_connectivity():
+    token = get_new_token()
+
+    URL = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices'
+
+    HEADERS = {
+        'Content-Type': 'application/json',
+        'Authorization': token
+    }
+
+    res = requests.get(url=URL, headers=HEADERS)
+    print(f'res {res}')
+    res_json = res.json()
+    
+    print(f'connectivity data: \n {json.dumps(res_json, indent=2)}')
 
 
 if __name__ == 'pi_hvac_controller.pi_logic.thermostat_logic':
