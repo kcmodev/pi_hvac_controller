@@ -15,7 +15,8 @@ def check_hvac_status():
         print(
             f'HVAC system currently \'{current_hvac_status}\'. Cycling air freshener...')
         cycle_sprayer_motor()
-        sleep(1200)  # wait 20 mins (1200 sec) before spraying again
+        # sleep(1200)  # wait 20 mins (1200 sec) before spraying again
+        sleep(5)
     else:
         # wait 60 secs to check again if no activity detected
         sleep(60)
@@ -26,7 +27,7 @@ if __name__ == '__main__':
     Resets sprayer to starting position and initiates event loop to monitor
     HVAC system status.
     """
-    
+
     reset_sprayer()
 
     try:

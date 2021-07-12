@@ -1,5 +1,4 @@
 from flask import Flask, render_template
-from jinja2 import environment
 from pi_logic.motor_logic import cycle_sprayer_manually
 import json
 

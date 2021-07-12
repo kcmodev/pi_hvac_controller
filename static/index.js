@@ -6,7 +6,7 @@ document.querySelector('.spray_air_freshener').addEventListener('click', (e) => 
   e.preventDefault()
   $.getJSON('/spray_air_freshener',
       function(data) {
-    //do nothing
+        console.log('Spray button clicked...')
   });
   return false;
 });
