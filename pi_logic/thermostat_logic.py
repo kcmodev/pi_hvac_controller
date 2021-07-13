@@ -1,5 +1,6 @@
 import requests
 import json
+from datetime import datetime
 
 
 def get_new_token():
@@ -20,7 +21,7 @@ def get_new_token():
     res_json = res.json()
     access_token = f'{res_json["token_type"]} {res_json["access_token"]}'
 
-    print(f'token data: \n {json.dumps(res_json, indent=2)}')
+    #print(f'token data: \n {json.dumps(res_json, indent=2)}')
 
     return access_token
 
@@ -46,7 +47,7 @@ def get_thermostat_status():
 
     current_status = res_json['traits']['sdm.devices.traits.ThermostatHvac']['status']
 
-    print(f'Current HVAC status: {current_status}')
+    print(f'Current HVAC status: {current_status} on {datetime.now()}')
 
     return current_status
 
@@ -79,7 +80,7 @@ def check_hvac_connectivity():
     }
 
     res = requests.get(url=URL, headers=HEADERS)
-    print(f'res {res}')
+    #print(f'res {res}')
     res_json = res.json()
 
     print(f'connectivity data: \n {json.dumps(res_json, indent=2)}')
