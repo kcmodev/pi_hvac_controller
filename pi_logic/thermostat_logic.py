@@ -62,7 +62,7 @@ def run_fan_only():
         'Authorization': token
     }
 
-    DATA = "{ 'command': 'sdm.devices.commands.Fan.SetTimer', 'params': { 'timerMode': 'ON', 'duration': '900s' } }"
+    DATA = "{ 'command': 'sdm.devices.commands.Fan.SetTimer', 'params': { 'timerMode': 'ON', 'duration': '1800s' } }"
 
     requests.post(url=URL, headers=HEADERS, data=DATA)
 

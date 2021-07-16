@@ -17,14 +17,15 @@ def cycle_sprayer_motor(manual=False):
     """
     Fully cycles sprayer motor for x number of cycles.
     """
+    reset_sprayer()
     num_sprays = 2
 
     if check_time(manual):
         for i in range(num_sprays):
             print(f'Cycle {i+1} of {num_sprays}')
-            motor.forward(speed=0.4)
-            sleep(0.6)
-            motor.backward(speed=0.3)
+            motor.forward(speed=0.8)
+            sleep(0.5)
+            motor.backward(speed=0.5)
             sleep(0.3)
             motor.stop()
             sleep(1)
@@ -51,6 +52,6 @@ def check_time(manual=False):
 def cycle_sprayer_manually():
     print('Cycling sprayer manually...')
     run_fan_only()
-    sleep(15)
+    sleep(10)
     cycle_sprayer_motor(True)
     
