@@ -9,27 +9,25 @@ def check_hvac_status():
     Checks status of thermostat. If heating or cooling it will actuate the air freshener motor
     and then wait 20 minutes before returning to check the status again.
     """
+    minute = 60
 
     current_hvac_status = get_thermostat_status()
-    #current_hvac_status = 'COOLING'
 
     if current_hvac_status == 'COOLING' or current_hvac_status == 'HEATING':
         print(
             f'HVAC system currently \'{current_hvac_status}\'. Cycling air freshener... on {datetime.now()}')
         cycle_sprayer_motor()
-        sleep(1200)  # wait 20 mins (1200 sec) before spraying again
-        #sleep(5)
+        sleep(minute)  # wait 30 minutes before spraying again
     else:
-        # wait 60 secs to check again if no activity detected
-        sleep(300)
+        # wait 5 minutes to check again if no hvac is not active
+        sleep(minute)
 
 
-if __name__ == '__main__':
+def start_main_hvac_event_loop():
     """
     Resets sprayer to starting position and initiates event loop to monitor
     HVAC system status.
     """
-
     reset_sprayer()
 
     try:
@@ -39,3 +37,7 @@ if __name__ == '__main__':
 
     except KeyboardInterrupt:
         print('User interrupted. Terminating...')
+
+
+if __name__ == '__main__':
+    pass
