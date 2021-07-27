@@ -6,7 +6,8 @@ import json
 from main import start_main_hvac_event_loop
 
 app = Flask(__name__)
-status = ''
+system_status = ''
+last_spray_time = 0
 
 # TODO: Set globals for system status, temp etc..
 # TODO: Enhance web app styling
@@ -18,11 +19,11 @@ def index():
     """
     Renders landing page for user interaction.
     """
-    global status
+    global system_status, last_spray_time
 
-    status = 'determining...'
+    system_status = 'determining...'
 
-    return render_template('index.html', status=status)
+    return render_template('index.html', system_status=system_status, last_spray_time=last_spray_time)
 
 
 @app.route("/spray_air_freshener", methods=['GET'])
@@ -59,7 +60,6 @@ def stop_main_loop():
         main_loop.terminate()
         print('Main loop terminated.')
     except AttributeError:
-        print('Main loop not running.')
         return json.dumps({'success': False}), 400, {'ContentType': 'application/json'}
 
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
