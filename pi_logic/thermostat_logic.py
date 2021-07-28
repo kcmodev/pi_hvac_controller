@@ -8,20 +8,20 @@ def get_new_token():
     Sends a post request to authenticate and retrieve the oauth access token.
     """
 
-    URL = 'https://www.googleapis.com/oauth2/v4/token'
+    oauth_url = 'https://www.googleapis.com/oauth2/v4/token'
 
-    DATA = {
+    data = {
         'client_id': config.CLIENT_ID,
         'client_secret': config.CLIENT_SECRET,
         'refresh_token': config.REFRESH_TOKEN,
         'grant_type': 'refresh_token'
     }
 
-    res = requests.post(url=URL, data=DATA)
+    res = requests.post(url=oauth_url, data=data)
     res_json = res.json()
     access_token = f'{res_json["token_type"]} {res_json["access_token"]}'
 
-    #print(f'token data: \n {json.dumps(res_json, indent=2)}')
+    # print(f'token data: \n {json.dumps(res_json, indent=2)}')
 
     return access_token
 
@@ -33,17 +33,18 @@ def get_thermostat_status():
 
     token = get_new_token()
 
-    URL = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices/{config.DEVICE_ID}'
+    status_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/' \
+                 f'{config.PROJECT_ID}/devices/{config.DEVICE_ID}'
 
-    HEADERS = {
+    headers = {
         'Content-Type': 'application/json',
         'Authorization': token
     }
 
-    res = requests.get(URL, headers=HEADERS)
+    res = requests.get(status_url, headers=headers)
     res_json = res.json()
 
-    #print(f'hvac response: \n {json.dumps(res_json, indent=2)}')
+    # print(f'hvac response: \n {json.dumps(res_json, indent=2)}')
 
     current_status = res_json['traits']['sdm.devices.traits.ThermostatHvac']['status']
 
@@ -55,16 +56,18 @@ def get_thermostat_status():
 def run_fan_only():
     token = get_new_token()
 
-    URL = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices/{config.DEVICE_ID}:executeCommand'
+    fan_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/' \
+              f'{config.PROJECT_ID}/devices/{config.DEVICE_ID}:executeCommand'
 
-    HEADERS = {
+    headers = {
         'Content-Type': 'application/json',
         'Authorization': token
     }
 
-    DATA = "{ 'command': 'sdm.devices.commands.Fan.SetTimer', 'params': { 'timerMode': 'ON', 'duration': '1800s' } }"
+    data = "{ 'command': 'sdm.devices.commands.Fan.SetTimer', " \
+           "'params': { 'timerMode': 'ON', 'duration': '900s' } }"
 
-    requests.post(url=URL, headers=HEADERS, data=DATA)
+    requests.post(url=fan_url, headers=headers, data=data)
 
     print('Fan running for 15 mins...')
 
@@ -72,15 +75,15 @@ def run_fan_only():
 def check_hvac_connectivity():
     token = get_new_token()
 
-    URL = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices'
+    device_list_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices'
 
-    HEADERS = {
+    headers = {
         'Content-Type': 'application/json',
         'Authorization': token
     }
 
-    res = requests.get(url=URL, headers=HEADERS)
-    #print(f'res {res}')
+    res = requests.get(url=device_list_url, headers=headers)
+    # print(f'res {res}')
     res_json = res.json()
 
     print(f'connectivity data: \n {json.dumps(res_json, indent=2)}')

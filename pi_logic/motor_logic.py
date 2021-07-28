@@ -13,45 +13,31 @@ def reset_sprayer():
     motor.stop()
 
 
-def cycle_sprayer_motor(manual=False):
+def cycle_sprayer_motor(manual=False, num_sprays=2):
     """
     Fully cycles sprayer motor for x number of cycles.
-    """
-    reset_sprayer()
-    num_sprays = 2
-
-    if check_time(manual):
-        for i in range(num_sprays):
-            print(f'Cycle {i+1} of {num_sprays}')
-            motor.forward(speed=0.8)
-            sleep(0.5)
-            motor.backward(speed=0.5)
-            sleep(0.3)
-            motor.stop()
-            sleep(1)
+    """ 
+    for i in range(num_sprays):
+        print(f'Cycle {i + 1} of {num_sprays}')
+        motor.forward(speed=0.4)
+        sleep(0.6)
+        motor.backward(speed=0.3)
+        sleep(0.3)
+        motor.stop()
+        sleep(1)
 
 
-def check_time(manual=False):
-    """
-    Checks time to spray between the hours of 0700 and 2200.
-    """
+def temporarily_stop_cycle(num_days):
+    # minutes in a day: 24 hours * 60 minutes * 60 seconds
+    minutes_per_day = 24 * 60 * 60
+    requested_time = minutes_per_day * num_days
 
-    hours = localtime().tm_hour
-
-    if 7 < hours < 22:  # run between 7am and 10pm (2200 hrs)
-        print('Currently daytime, cycling sprayer...')
-        return True
-
-    elif manual == True:
-        print('Cycling sprayer manually...')
-        return True
-
-    return False
+    print(f'Pausing program for {num_days} days.')
+    sleep(requested_time)
 
 
 def cycle_sprayer_manually():
     print('Cycling sprayer manually...')
     run_fan_only()
     sleep(10)
-    cycle_sprayer_motor(True)
-    
+    cycle_sprayer_motor(manual=True)
