@@ -7,6 +7,7 @@ def get_new_token():
     """
     Sends a post request to authenticate and retrieve the oauth access token.
     """
+    #print(f'\'get_new_token()\' retrieving oauth token at {datetime.now()}')
 
     oauth_url = 'https://www.googleapis.com/oauth2/v4/token'
 
@@ -21,7 +22,7 @@ def get_new_token():
     res_json = res.json()
     access_token = f'{res_json["token_type"]} {res_json["access_token"]}'
 
-    # print(f'token data: \n {json.dumps(res_json, indent=2)}')
+    #print(f'token data: \n {json.dumps(res_json, indent=2)}')
 
     return access_token
 
@@ -30,6 +31,7 @@ def get_thermostat_status():
     """
     Uses the access token to retrieve the current status of the thermostat.
     """
+    #print(f'\'get_thermostat_status()\' calling Google Nest API at {datetime.now()}')
 
     token = get_new_token()
 
@@ -48,12 +50,14 @@ def get_thermostat_status():
 
     current_status = res_json['traits']['sdm.devices.traits.ThermostatHvac']['status']
 
-    print(f'Current HVAC status: {current_status} on {datetime.now()}')
+    #print(f'Current HVAC status: {current_status} on {datetime.now()}')
 
     return current_status
 
 
 def run_fan_only():
+    print(f'\'run_fan_only()\' calling Google Nest API at {datetime.now()}')
+    
     token = get_new_token()
 
     fan_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/' \

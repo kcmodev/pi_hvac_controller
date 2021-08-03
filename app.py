@@ -3,7 +3,7 @@ from pi_logic.motor_logic import cycle_sprayer_manually
 from multiprocessing import Process
 import json
 
-from main import start_main_hvac_event_loop
+#from main import start_main_hvac_event_loop
 
 app = Flask(__name__)
 system_status = 'Determining...'
@@ -41,7 +41,7 @@ def start_main_loop():
     """
     try:
         main_loop.start()
-        print('Main loop started.')
+        print(f'Main loop started. Name:\'{main_loop.name}\', ID:{main_loop.pid}')
     except AssertionError:
         print('Main loop is already running.')
         return json.dumps({'success': False}), 400, {'ContentType': 'application/json'}
@@ -58,12 +58,13 @@ def stop_main_loop():
         main_loop.terminate()
         print('Main loop terminated.')
     except AttributeError:
-        print('Attribute error.')
+        print('Main loop not running.')
         return json.dumps({'success': False}), 400, {'ContentType': 'application/json'}
 
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
 
 if __name__ == '__main__':
-    main_loop = Process(target=start_main_hvac_event_loop, daemon=True)
+    #main_loop = Process(target=start_main_hvac_event_loop, daemon=False)
+    #print(f'Initializing main loop thread. Name:\'{main_loop.name}\', ID:{main_loop}')
     app.run(debug=True, host='0.0.0.0', port=80)
