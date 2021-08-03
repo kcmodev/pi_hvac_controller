@@ -1,6 +1,6 @@
 import requests
 import json
-from datetime import datetime
+from time import asctime, localtime
 
 
 def get_new_token():
@@ -32,6 +32,7 @@ def get_thermostat_status():
     Uses the access token to retrieve the current status of the thermostat.
     """
     #print(f'\'get_thermostat_status()\' calling Google Nest API at {datetime.now()}')
+    print(f'{asctime(localtime())} -- Running fan manually')
 
     token = get_new_token()
 
