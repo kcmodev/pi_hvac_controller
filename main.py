@@ -12,7 +12,7 @@ def check_hvac_status(manual=True):
     minute = 60
     current_hour = localtime().tm_hour
     
-    if 7 <= current_hour <= 22:
+    if 7 < current_hour < 22:
         # only automatically check status during the day
         current_hvac_status = get_thermostat_status()
 

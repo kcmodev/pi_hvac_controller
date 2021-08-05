@@ -57,7 +57,7 @@ def get_thermostat_status():
 
 
 def run_fan_only():
-    print(f'\'run_fan_only()\' calling Google Nest API at {datetime.now()}')
+    print(f'{asctime(localtime())} -- Running fan manually for 15 minutes.')
     
     token = get_new_token()
 
@@ -74,7 +74,7 @@ def run_fan_only():
 
     requests.post(url=fan_url, headers=headers, data=data)
 
-    print('Fan running for 15 mins...')
+    #print('Fan running for 15 mins...')
 
 
 def check_hvac_connectivity():
