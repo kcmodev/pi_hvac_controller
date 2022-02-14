@@ -2,11 +2,15 @@ import requests
 import json
 from datetime import datetime
 
+token = ''
+current_status = ''
+
 
 def get_new_token():
     """
     Sends a post request to authenticate and retrieve the oauth access token.
     """
+    global token
 
     oauth_url = 'https://www.googleapis.com/oauth2/v4/token'
 
@@ -19,19 +23,14 @@ def get_new_token():
 
     res = requests.post(url=oauth_url, data=data)
     res_json = res.json()
-    access_token = f'{res_json["token_type"]} {res_json["access_token"]}'
-
-    # print(f'token data: \n {json.dumps(res_json, indent=2)}')
-
-    return access_token
+    token = f'{res_json["token_type"]} {res_json["access_token"]}'
 
 
 def get_thermostat_status():
     """
     Uses the access token to retrieve the current status of the thermostat.
     """
-
-    token = get_new_token()
+    global token, current_status
 
     status_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/' \
                  f'{config.PROJECT_ID}/devices/{config.DEVICE_ID}'
@@ -41,20 +40,39 @@ def get_thermostat_status():
         'Authorization': token
     }
 
-    res = requests.get(status_url, headers=headers)
-    res_json = res.json()
+    try:  # try to make a request to the api, if it fails get a new key
+        res = requests.get(status_url, headers=headers)
+        response_as_json = res.json()
+        # print(f'hvac response: \n {json.dumps(response_as_json, indent=2)}')
 
-    # print(f'hvac response: \n {json.dumps(res_json, indent=2)}')
+        if 'error' in response_as_json:
+            response_status = response_as_json['error']['status']
 
-    current_status = res_json['traits']['sdm.devices.traits.ThermostatHvac']['status']
+            print(f'response status: {response_status}')
 
-    print(f'Current HVAC status: {current_status} on {datetime.now()}')
+            if response_status == 'UNAUTHENTICATED':
+                raise ConnectionRefusedError
+        else:
+            current_status = response_as_json['traits']['sdm.devices.traits.ThermostatHvac']['status']
+            print(f'Current HVAC status: {current_status} on {datetime.now()}')
 
-    return current_status
+    except ConnectionRefusedError:
+        print('Connection refused. Generating new token and trying again.')
+        get_new_token()
+        get_thermostat_status()
+
+    except KeyError as e:
+        print(f'Key error: {e}')
+        pass
+
+    except ConnectionError:
+        print('Connection error. Generating new token and trying again.')
+        get_new_token()
+        get_thermostat_status()
 
 
 def run_fan_only():
-    token = get_new_token()
+    global token, current_status
 
     fan_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/' \
               f'{config.PROJECT_ID}/devices/{config.DEVICE_ID}:executeCommand'
@@ -67,13 +85,16 @@ def run_fan_only():
     data = "{ 'command': 'sdm.devices.commands.Fan.SetTimer', " \
            "'params': { 'timerMode': 'ON', 'duration': '900s' } }"
 
-    requests.post(url=fan_url, headers=headers, data=data)
+    try:
+        requests.post(url=fan_url, headers=headers, data=data)
+        print('Fan running for 15 minutes...')
 
-    print('Fan running for 15 mins...')
+    except Exception as e:
+        print(f'Exception when running fan. \n {e}')
 
 
 def check_hvac_connectivity():
-    token = get_new_token()
+    global token, current_status
 
     device_list_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices'
 
@@ -83,10 +104,13 @@ def check_hvac_connectivity():
     }
 
     res = requests.get(url=device_list_url, headers=headers)
-    # print(f'res {res}')
     res_json = res.json()
 
     print(f'connectivity data: \n {json.dumps(res_json, indent=2)}')
+
+
+def get_current_system_status():
+    return current_status
 
 
 if __name__ == 'pi_hvac_controller.pi_logic.thermostat_logic':

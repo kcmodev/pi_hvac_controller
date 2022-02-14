@@ -1,4 +1,4 @@
-from pi_logic.thermostat_logic import get_thermostat_status, check_hvac_connectivity
+from pi_logic.thermostat_logic import get_thermostat_status
 from pi_logic.motor_logic import cycle_sprayer_motor, reset_sprayer
 from time import sleep
 from datetime import datetime
@@ -40,4 +40,4 @@ def start_main_hvac_event_loop():
 
 
 if __name__ == '__main__':
-    pass
+    start_main_hvac_event_loop()

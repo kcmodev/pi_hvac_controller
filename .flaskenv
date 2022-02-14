@@ -1,0 +1,4 @@
+FLASK_APP=app.py
+FLASK_ENV=development
+TEMPLATES_AUTO_RELOAD=True
+FLASK_RUN_EXTRA_FILES=file1:static/style.css
