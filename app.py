@@ -10,9 +10,8 @@ def index():
     '''
     Renders landing page for user interaction.
     '''
-    global system_status, last_spray_time
 
-    return render_template('index.html', system_status=system_status, last_spray_time=last_spray_time)
+    return render_template('index.html')
 
 
 @app.route("/spray_air_freshener", methods=['POST'])
@@ -21,7 +20,8 @@ def spray_air_freshener():
     Accepts POST request to cycle sprayer motor on button press.
     '''
     motor_logic.cycle_sprayer_manually()
-    response = jsonify({'success': True}, 200, {'ContentType': 'application/json'})
+    response = jsonify({'success': True}, 200, {
+                       'ContentType': 'application/json'})
     response.headers.add('Access-Control-Allow-Origin', '*')
 #     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
     return response
@@ -30,7 +30,10 @@ def spray_air_freshener():
 @app.route("/get_last_time_sprayed", methods=['GET'])
 def get_last_time_sprayed():
     last_sprayed = motor_logic.get_last_time_cycled_sprayer()
-    return jsonify(last_sprayed)
+    response = jsonify({'time': last_sprayed}, 200, {
+                       'ContentType': 'application/json'})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 
 @app.route("/get_system_status", methods=['GET'])
