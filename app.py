@@ -60,6 +60,7 @@ def stop_main_loop():
         # main_loop.terminate()
         print('Main loop terminated.')
     except AttributeError:
+        print('Main loop not running.')
         return json.dumps({'success': False}), 400, {'ContentType': 'application/json'}
 
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}

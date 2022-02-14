@@ -1,6 +1,7 @@
+import datetime
 import requests
 import json
-from datetime import datetime
+from time import asctime, localtime
 
 token = ''
 current_status = ''

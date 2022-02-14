@@ -1,10 +1,9 @@
 # from gpiozero import Motor, DigitalOutputDevice
 import datetime
-from time import localtime, sleep
+from time import asctime, localtime, sleep
 
 import app
 from pi_logic.thermostat_logic import run_fan_only
-# from app import *
 
 # motor = Motor(forward=23, backward=24, enable=12, pwm=True)
 # fan = DigitalOutputDevice(14, active_high=True)
@@ -61,7 +60,7 @@ def temporarily_stop_cycle(num_days):
 
 
 def cycle_sprayer_manually():
-    print('Cycling sprayer manually...')
+    print(f'{asctime(localtime())} -- Manually cycling sprayer...')
     run_fan_only()
     sleep(10)
     cycle_sprayer_motor(True)
