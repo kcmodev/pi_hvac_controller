@@ -1,14 +1,14 @@
 # from gpiozero import Motor, DigitalOutputDevice
 from datetime import datetime
 import string
-from time import sleep, strftime
+from time import sleep
 
 # import app
 from pi_logic.thermostat_logic import run_fan_only
 
 # motor = Motor(forward=23, backward=24, enable=12, pwm=True)
 # fan = DigitalOutputDevice(14, active_high=True)
-last_spray_time = 0
+last_spray_time = ""
 
 
 def reset_sprayer():
@@ -68,6 +68,4 @@ def cycle_sprayer_manually():
 
 
 def get_last_time_cycled_sprayer() -> string:
-    global last_spray_time
-    date_time_string = last_spray_time.strftime("%m/%d/%Y, %H:%M:%S")
-    return date_time_string
+    return last_spray_time
