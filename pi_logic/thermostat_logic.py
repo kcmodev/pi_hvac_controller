@@ -44,7 +44,7 @@ def get_thermostat_status():
     try:  # try to make a request to the api, if it fails get a new key
         res = requests.get(status_url, headers=headers)
         response_as_json = res.json()
-        # print(f'hvac response: \n {json.dumps(response_as_json, indent=2)}')
+        print(f'hvac response: \n {json.dumps(response_as_json, indent=2)}')
 
         if 'error' in response_as_json:
             response_status = response_as_json['error']['status']
@@ -55,7 +55,7 @@ def get_thermostat_status():
                 raise ConnectionRefusedError
         else:
             current_status = response_as_json['traits']['sdm.devices.traits.ThermostatHvac']['status']
-            print(f'Current HVAC status: {current_status} on {datetime.now()}')
+            print(f'Current HVAC status: {current_status} on {datetime.datetime}')
 
     except ConnectionRefusedError:
         print('Connection refused. Generating new token and trying again.')
@@ -87,11 +87,32 @@ def run_fan_only():
            "'params': { 'timerMode': 'ON', 'duration': '900s' } }"
 
     try:
-        requests.post(url=fan_url, headers=headers, data=data)
-        print('Fan running for 15 minutes...')
+        response = requests.post(url=fan_url, headers=headers, data=data)
+        response_as_json = response.json()
+        
+        if 'error' in response_as_json:
+            response_status = response_as_json['error']['status']
 
-    except Exception as e:
-        print(f'Exception when running fan. \n {e}')
+            print(f'response status: {response_status}')
+
+            if response_status == 'UNAUTHENTICATED':
+                raise ConnectionRefusedError
+            
+        print('Fan running for 15 minutes...')
+        
+    except ConnectionRefusedError:
+        print('Connection refused. Generating new token and trying again.')
+        get_new_token()
+        run_fan_only()
+
+    except KeyError as e:
+        print(f'Key error: {e}')
+        pass
+
+    except ConnectionError:
+        print('Connection error. Generating new token and trying again.')
+        get_new_token()
+        run_fan_only()
 
 
 def check_hvac_connectivity():

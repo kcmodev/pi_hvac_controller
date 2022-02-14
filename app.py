@@ -21,7 +21,10 @@ def spray_air_freshener():
     Accepts POST request to cycle sprayer motor on button press.
     '''
     motor_logic.cycle_sprayer_manually()
-    return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
+    response = jsonify({'success': True}, 200, {'ContentType': 'application/json'})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+#     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
+    return response
 
 
 @app.route("/get_last_time_sprayed", methods=['GET'])
