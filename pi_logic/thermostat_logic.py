@@ -1,7 +1,6 @@
-import datetime
+from datetime import datetime
 import requests
 import json
-from time import asctime, localtime
 
 token = ''
 current_status = ''
@@ -11,7 +10,7 @@ def get_new_token():
     """
     Sends a post request to authenticate and retrieve the oauth access token.
     """
-    global token
+    global token, current_status
 
     oauth_url = 'https://www.googleapis.com/oauth2/v4/token'
 
@@ -27,7 +26,7 @@ def get_new_token():
     token = f'{res_json["token_type"]} {res_json["access_token"]}'
 
 
-def get_thermostat_status():
+def get_thermostat_status() -> str:
     """
     Uses the access token to retrieve the current status of the thermostat.
     """
@@ -44,18 +43,18 @@ def get_thermostat_status():
     try:  # try to make a request to the api, if it fails get a new key
         res = requests.get(status_url, headers=headers)
         response_as_json = res.json()
-        print(f'hvac response: \n {json.dumps(response_as_json, indent=2)}')
+        # print(f'hvac response: \n {json.dumps(response_as_json, indent=2)}')
 
         if 'error' in response_as_json:
             response_status = response_as_json['error']['status']
 
-            print(f'response status: {response_status}')
+            print(f'Response status: {response_status}')
 
             if response_status == 'UNAUTHENTICATED':
                 raise ConnectionRefusedError
         else:
             current_status = response_as_json['traits']['sdm.devices.traits.ThermostatHvac']['status']
-            print(f'Current HVAC status: {current_status} on {datetime.datetime}')
+            print(f'Current HVAC status: {current_status} on {datetime.now()}')
 
     except ConnectionRefusedError:
         print('Connection refused. Generating new token and trying again.')
@@ -71,9 +70,10 @@ def get_thermostat_status():
         get_new_token()
         get_thermostat_status()
 
+    return current_status
 
 def run_fan_only():
-    global token, current_status
+    global token
 
     fan_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/' \
               f'{config.PROJECT_ID}/devices/{config.DEVICE_ID}:executeCommand'
@@ -93,7 +93,7 @@ def run_fan_only():
         if 'error' in response_as_json:
             response_status = response_as_json['error']['status']
 
-            print(f'response status: {response_status}')
+            print(f'Response status: {response_status}')
 
             if response_status == 'UNAUTHENTICATED':
                 raise ConnectionRefusedError
@@ -116,8 +116,6 @@ def run_fan_only():
 
 
 def check_hvac_connectivity():
-    global token, current_status
-
     device_list_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices'
 
     headers = {
@@ -126,9 +124,8 @@ def check_hvac_connectivity():
     }
 
     res = requests.get(url=device_list_url, headers=headers)
-    res_json = res.json()
-
-    print(f'connectivity data: \n {json.dumps(res_json, indent=2)}')
+    # res_json = res.json()
+    # print(f'connectivity data: \n {json.dumps(res_json, indent=2)}')
 
 
 def get_current_system_status():

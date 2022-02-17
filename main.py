@@ -1,16 +1,17 @@
 from pi_logic.thermostat_logic import get_thermostat_status
-from pi_logic.motor_logic import cycle_sprayer_motor, reset_sprayer
-from time import sleep, localtime, asctime
+from pi_logic.motor_logic import cycle_sprayer_motor
+from time import sleep
 from datetime import datetime
 
 
-def check_hvac_status(manual=True):
+def check_hvac_status():
     """
     Checks status of thermostat. If heating or cooling it will actuate the air freshener motor
     and then wait 20 minutes before returning to check the status again.
     """
+
     minute = 60
-    current_hour = localtime().tm_hour
+    current_hour = datetime.now().hour
     
     if 7 < current_hour < 22:
         # only automatically check status during the day
@@ -18,16 +19,16 @@ def check_hvac_status(manual=True):
 
         if current_hvac_status == 'COOLING' or current_hvac_status == 'HEATING':
             print(
-                f'{asctime(localtime())} -- HVAC system currently {current_hvac_status}.')
+                f'{datetime.now()} -- HVAC system currently {current_hvac_status}.')
             cycle_sprayer_motor()
             print('Waiting 30 minutes to spray again...')
             sleep(minute * 30)  # wait 30 minutes before spraying again
         else:
             # wait 5 minutes to check again if no hvac is not active
-            print(f'{asctime(localtime())} -- HVAC system currently {current_hvac_status}. Sleeping for 5 minutes.')
+            print(f'{datetime.now()} -- HVAC system currently {current_hvac_status}. Sleeping for 5 minutes.')
             sleep(minute * 5)
     else:
-        print(f'{asctime(localtime())} -- Currently night time. Waiting 30 minutes to check time again...')
+        print(f'{datetime.now()} -- Currently night time. Waiting 30 minutes to check time again...')
         sleep(minute * 30)
 
 
@@ -37,7 +38,7 @@ def start_main_hvac_event_loop():
     HVAC system status.
     """
 
-    print(f'{asctime(localtime())} -- Starting main event loop...')
+    print(f'{datetime.now()} -- Starting main event loop...')
     try:
         while True:
             check_hvac_status()

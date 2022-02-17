@@ -10,7 +10,6 @@ def index():
     '''
     Renders landing page for user interaction.
     '''
-
     return render_template('index.html')
 
 
@@ -23,7 +22,6 @@ def spray_air_freshener():
     response = jsonify({'success': True}, 200, {
                        'ContentType': 'application/json'})
     response.headers.add('Access-Control-Allow-Origin', '*')
-#     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
     return response
 
 
@@ -53,7 +51,6 @@ def start_main_loop():
     except AssertionError:
         print('Main loop is already running.')
         return json.dumps({'success': False}), 400, {'ContentType': 'application/json'}
-
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
 
@@ -68,7 +65,6 @@ def stop_main_loop():
     except AttributeError:
         print('Main loop not running.')
         return json.dumps({'success': False}), 400, {'ContentType': 'application/json'}
-
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
 
