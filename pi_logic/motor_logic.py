@@ -1,9 +1,6 @@
 # from gpiozero import Motor, DigitalOutputDevice
 from datetime import datetime
-import string
 from time import sleep
-
-# import app
 from pi_logic.thermostat_logic import run_fan_only
 
 # motor = Motor(forward=23, backward=24, enable=12, pwm=True)
@@ -12,7 +9,7 @@ last_spray_time = ""
 
 
 def reset_sprayer():
-    print('Resetting the sprayer to start position...')
+    print("Resetting the sprayer to start position...")
     # motor.backward(speed=0.3)
     sleep(0.1)
     # motor.stop()
@@ -45,10 +42,10 @@ def check_time(manual=False) -> bool:
     hours = datetime.now().hour
 
     if 7 < hours < 22:  # run between 7am and 10pm (2200 hrs)
-        print('Currently daytime, cycling sprayer...')
+        print("Currently daytime, cycling sprayer...")
         return True
     elif manual:
-        print('Cycling sprayer manually...')
+        print("Cycling sprayer manually...")
         return True
 
     return False
@@ -61,11 +58,11 @@ def temporarily_stop_cycle(num_days):
 
 
 def cycle_sprayer_manually():
-    print(f'{datetime.now()} -- Manually cycling sprayer...')
+    print(f"{datetime.now()} -- Manually cycling sprayer...")
     run_fan_only()
     sleep(10)
     cycle_sprayer_motor(True)
 
 
-def get_last_time_cycled_sprayer() -> string:
+def get_last_time_cycled_sprayer() -> str:
     return last_spray_time
