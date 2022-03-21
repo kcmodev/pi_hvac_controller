@@ -1,42 +1,57 @@
 from flask import Flask, jsonify, render_template
-import json
+from tinydb import TinyDB, Query
+from datetime import datetime
+from . import constants
 from pi_logic import motor_logic, thermostat_logic
+import json
+import requests
 
 app = Flask(__name__)
+db = TinyDB('./db.json')
+table = db.table('spray_timestamp')
+Spray = Query()
 
-
-@app.route('/', methods=['GET'])
-def index():
-    """
-    Renders landing page for user interaction.
-    """
-    
-    return render_template('index.html')
-
-
-@app.route('/spray_air_freshener/<is_manual>', methods=['POST'])
-def spray_air_freshener(is_manual):
+@app.route('/spray_air_freshener', methods=['POST'])
+def spray_air_freshener():
     """
     Accepts POST request to cycle sprayer motor on button press.
     """
     
-    motor_logic.cycle_sprayer_manually(is_manual)
-    response = jsonify({'success': True}, 200, {
-                       'ContentType': 'application/json'})
+    # motor_logic.cycle_sprayer_manually()
+    print('hitting sprayer endpoint manually...')
+    date = datetime.now().strftime('%m/%d/%y')
+    time = datetime.now().strftime('%H:%M:%S')
+
+    if len(table.all()) > 0:
+        # print(f'updating db entry: {table.all()[0]} to {time}')
+        table.update({'date': date, 'time': time})
+        # print(f'updated db entry: {table.all()[0]}')
+    else: 
+        # print(f'db search: {table.all()}')
+        table.insert({'date': f"{date}", 'time': f'{time}'})
+
+    response = jsonify({'date': date , 'time': time})
     response.headers.add('Access-Control-Allow-Origin', '*')
+
+    URL = f'http://{constants.FRONT_END_IP}/timestamp'
+    params = {"date": date, "time": time}
+    requests.patch(url=URL, params=params)
+
     return response
 
 
-@app.route('/get_last_time_sprayed', methods=['GET'])
+@app.route('/get_timestamp', methods=['GET'])
 def get_last_time_sprayed():
     """
     Return last time sprayers was cycled
     """
 
-    last_sprayed = motor_logic.get_last_time_cycled_sprayer()
+    last_sprayed = table.all()[0]['time']
+    print(f'returning last time sprayed: {last_sprayed}')
     response = jsonify({'time': last_sprayed}, 200, {
                        'ContentType': 'application/json'})
     response.headers.add('Access-Control-Allow-Origin', '*')
+
     return response
 
 
@@ -80,7 +95,6 @@ def stop_main_loop():
         return json.dumps({'success': False}), 400, {'ContentType': 'application/json'}
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
-
 if __name__ == '__main__':
     # main_loop = Process(target=main.start_main_hvac_event_loop(), daemon=True)
-    app.run(host='0.0.0.0', port=80, load_dotenv=True)
+    app.run(host='0.0.0.0', port=80, load_dotenv=True, debug=True)

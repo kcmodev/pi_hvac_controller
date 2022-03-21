@@ -1,3 +1,4 @@
 __pycache__
 config_settings/config.py
 venv
+constants.py
