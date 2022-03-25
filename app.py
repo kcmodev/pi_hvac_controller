@@ -1,20 +1,20 @@
-from flask import Flask, jsonify, render_template
+import flask
+from flask import Flask, jsonify
 from tinydb import TinyDB, Query
 from datetime import datetime
-from . import constants
 from pi_logic import motor_logic, thermostat_logic
 import json
-import requests
 
 app = Flask(__name__)
 db = TinyDB('./db.json')
 table = db.table('spray_timestamp')
 Spray = Query()
 
-@app.route('/spray_air_freshener', methods=['POST'])
+
+@app.route('/spray', methods=['POST'])
 def spray_air_freshener():
     """
-    Accepts POST request to cycle sprayer motor on button press.
+    Request to cycle sprayer motor.
     """
     
     # motor_logic.cycle_sprayer_manually()
@@ -23,54 +23,53 @@ def spray_air_freshener():
     time = datetime.now().strftime('%H:%M:%S')
 
     if len(table.all()) > 0:
-        # print(f'updating db entry: {table.all()[0]} to {time}')
-        table.update({'date': date, 'time': time})
+        print(f'updating db entry: {table.all()[0]} to {time}')
+        # table.update({'date': date, 'time': time})
         # print(f'updated db entry: {table.all()[0]}')
     else: 
-        # print(f'db search: {table.all()}')
-        table.insert({'date': f"{date}", 'time': f'{time}'})
+        print(f'db search: {table.all()}')
+        # table.insert({'date': f"{date}", 'time': f'{time}'})
 
-    response = jsonify({'date': date , 'time': time})
+    response = jsonify({'date': date, 'time': time})
     response.headers.add('Access-Control-Allow-Origin', '*')
-
-    URL = f'http://{constants.FRONT_END_IP}/timestamp'
-    params = {"date": date, "time": time}
-    requests.patch(url=URL, params=params)
 
     return response
 
 
-@app.route('/get_timestamp', methods=['GET'])
+@app.route('/timestamp', methods=['GET', 'POST'])
 def get_last_time_sprayed():
     """
     Return last time sprayers was cycled
     """
+    if flask.request.method == 'GET':
+        last_sprayed_time = table.all()[0]['time']
+        last_sprayed_date = table.all()[0]['date']
+        print(f'returning last time sprayed: {last_sprayed_time}')
+        response = jsonify({'time': last_sprayed_time, 'date': last_sprayed_date})
+        response.headers.add('Access-Control-Allow-Origin', '*')
 
-    last_sprayed = table.all()[0]['time']
-    print(f'returning last time sprayed: {last_sprayed}')
-    response = jsonify({'time': last_sprayed}, 200, {
-                       'ContentType': 'application/json'})
-    response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
 
+    elif flask.request.method == 'POST':
+        data = flask.request.data
+        print(f'saving data to db: {data}')
+
+
+@app.route('/status', methods=['GET'])
+def get_system_status():
+    """
+    Returns current system status
+    """
+    status = thermostat_logic.get_current_system_status()
+    response = jsonify({'status': status})
     return response
 
 
-@app.route('/get_system_status', methods=['GET'])
-def get_system_status():
-    """
-    GET request to return current system status
-    """
-
-    system_status = thermostat_logic.get_current_system_status()
-    return json.dumps({'system_status': system_status})
-
-
-@app.route('/start_main_loop', methods=['POST'])
+@app.route('/start', methods=['POST'])
 def start_main_loop():
     """
-    Accepts GET request to start main loop process
+    Starts main loop background process
     """
-    
     try:
         # main_loop.start()
         print("Main loop started.")
@@ -81,12 +80,11 @@ def start_main_loop():
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
 
-@app.route("/stop_main_loop", methods=['POST'])
+@app.route("/stop", methods=['POST'])
 def stop_main_loop():
     """
-    Accepts GET request to terminate main loop process
+    Terminates main loop process
     """
-    
     try:
         # main_loop.terminate()
         print("Main loop terminated.")
@@ -94,6 +92,7 @@ def stop_main_loop():
         print("Main loop not running.")
         return json.dumps({'success': False}), 400, {'ContentType': 'application/json'}
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
+
 
 if __name__ == '__main__':
     # main_loop = Process(target=main.start_main_hvac_event_loop(), daemon=True)
