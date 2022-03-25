@@ -18,17 +18,11 @@ def spray_air_freshener():
     """
     
     # motor_logic.cycle_sprayer_manually()
-    print('hitting sprayer endpoint manually...')
+    print('POST to sprayer endpoint')
     date = datetime.now().strftime('%m/%d/%y')
     time = datetime.now().strftime('%H:%M:%S')
 
-    if len(table.all()) > 0:
-        print(f'updating db entry: {table.all()[0]} to {time}')
-        # table.update({'date': date, 'time': time})
-        # print(f'updated db entry: {table.all()[0]}')
-    else: 
-        print(f'db search: {table.all()}')
-        # table.insert({'date': f"{date}", 'time': f'{time}'})
+    check_and_insert(date, time)
 
     response = jsonify({'date': date, 'time': time})
     response.headers.add('Access-Control-Allow-Origin', '*')
@@ -44,15 +38,24 @@ def get_last_time_sprayed():
     if flask.request.method == 'GET':
         last_sprayed_time = table.all()[0]['time']
         last_sprayed_date = table.all()[0]['date']
-        print(f'returning last time sprayed: {last_sprayed_time}')
         response = jsonify({'time': last_sprayed_time, 'date': last_sprayed_date})
         response.headers.add('Access-Control-Allow-Origin', '*')
 
+        print(f'GET last time sprayed: {last_sprayed_time}')
         return response
 
     elif flask.request.method == 'POST':
-        data = flask.request.data
-        print(f'saving data to db: {data}')
+        data = flask.request.json
+        date = data['date']
+        time = data['time']
+
+        check_and_insert(date, time)
+
+        response = jsonify({'success': True, 'data': data})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+
+        print(f'POST data to db: date = {date} || time = {time}')
+        return response
 
 
 @app.route('/status', methods=['GET'])
@@ -92,6 +95,16 @@ def stop_main_loop():
         print("Main loop not running.")
         return json.dumps({'success': False}), 400, {'ContentType': 'application/json'}
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+def check_and_insert(date, time):
+    if len(table.all()) > 0:
+        print(f'updating db entry to: date={date} || time={time}')
+        # table.update({'date': date, 'time': time})
+        # print(f'updated db entry: {table.all()[0]}')
+    else:
+        print(f'db search: {table.all()}')
+        # table.insert({'date': f"{date}", 'time': f'{time}'})
 
 
 if __name__ == '__main__':
