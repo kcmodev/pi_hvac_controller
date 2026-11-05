@@ -1,68 +1,76 @@
-# from gpiozero import Motor, DigitalOutputDevice
-from datetime import datetime
+"""Drives the motor that presses the air freshener can."""
+
+from __future__ import annotations
+
+import fcntl
+import logging
+from collections.abc import Iterator
+from contextlib import contextmanager
 from time import sleep
+
+from gpiozero import Motor
+
+from pi_logic.config import spray_db_path
+from pi_logic.spray_log import record_spray
 from pi_logic.thermostat_logic import get_thermostat
 
-# motor = Motor(forward=23, backward=24, enable=12, pwm=True)
-# fan = DigitalOutputDevice(14, active_high=True)
-last_spray_time = ""
+logger = logging.getLogger(__name__)
+
+# BCM pin numbers for the motor driver
+FORWARD_PIN = 23
+BACKWARD_PIN = 24
+ENABLE_PIN = 12
+
+SPRAYS_PER_CYCLE = 2
+PRESS_SPEED = 0.4
+PRESS_SECONDS = 0.6
+RELEASE_SPEED = 0.3
+RELEASE_SECONDS = 0.3
+SECONDS_BETWEEN_SPRAYS = 1
+
+# Gives the fan time to get air moving through the filter before spraying onto it
+FAN_SPIN_UP_SECONDS = 10
 
 
-def reset_sprayer():
-    print("Resetting the sprayer to start position...")
-    # motor.backward(speed=0.3)
-    sleep(0.1)
-    # motor.stop()
+class SprayerBusyError(RuntimeError):
+    """Another thread or process is already using the sprayer."""
 
 
-def cycle_sprayer_motor(manual=False, num_sprays=2):
-    """
-    Fully cycles sprayer motor for x number of cycles.
-    """
-    global last_spray_time
-
-    if check_time(manual):
-        for i in range(num_sprays):
-            print(f'Cycle {i + 1} of {num_sprays}')
-#             motor.forward(speed=0.4)
-            sleep(0.6)
-#             motor.backward(speed=0.3)
-            sleep(0.3)
-#             motor.stop()
-            sleep(1)
-
-        last_spray_time = datetime.now()
+@contextmanager
+def _exclusive_sprayer() -> Iterator[None]:
+    """Claim the sprayer across processes, since the web app and monitor both drive it."""
+    with open(spray_db_path().with_suffix(".lock"), "w") as lock_file:
+        try:
+            fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise SprayerBusyError("The sprayer is already running") from error
+        yield  # Closing the file releases the lock
 
 
-def check_time(manual=False) -> bool:
-    """
-    Checks time to spray between the hours of 0700 and 2200.
-    """
-
-    hours = datetime.now().hour
-
-    if 7 < hours < 22:  # run between 7am and 10pm (2200 hrs)
-        print("Currently daytime, cycling sprayer...")
-        return True
-    elif manual:
-        print("Cycling sprayer manually...")
-        return True
-
-    return False
+def _run_motor(num_sprays: int) -> None:
+    # The pins are held only while spraying, so the other process can open them next.
+    with Motor(forward=FORWARD_PIN, backward=BACKWARD_PIN, enable=ENABLE_PIN, pwm=True) as motor:
+        for spray in range(1, num_sprays + 1):
+            logger.info("Spray %d of %d", spray, num_sprays)
+            motor.forward(speed=PRESS_SPEED)
+            sleep(PRESS_SECONDS)
+            motor.backward(speed=RELEASE_SPEED)
+            sleep(RELEASE_SECONDS)
+            motor.stop()
+            sleep(SECONDS_BETWEEN_SPRAYS)
+    record_spray()
 
 
-def temporarily_stop_cycle(num_days):
-    minutes_per_day = 24 * 60  # 24 hours * 60 minutes
-    requested_time = minutes_per_day * num_days
-    sleep(requested_time)
+def cycle_sprayer_motor(num_sprays: int = SPRAYS_PER_CYCLE) -> None:
+    """Spray while the HVAC system is already moving air."""
+    with _exclusive_sprayer():
+        _run_motor(num_sprays)
 
 
-def cycle_sprayer_manually():
-    print(f"{datetime.now()} -- Manually cycling sprayer...")
-    get_thermostat().run_fan()
-    sleep(10)
-    cycle_sprayer_motor(True)
-
-
-def get_last_time_cycled_sprayer() -> str:
-    return last_spray_time
+def cycle_sprayer_manually(num_sprays: int = SPRAYS_PER_CYCLE) -> None:
+    """Start the fan, then spray once it is moving air."""
+    with _exclusive_sprayer():
+        logger.info("Manual spray requested, starting the fan")
+        get_thermostat().run_fan()
+        sleep(FAN_SPIN_UP_SECONDS)
+        _run_motor(num_sprays)
