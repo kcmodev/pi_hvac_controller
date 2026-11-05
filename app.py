@@ -63,7 +63,7 @@ def get_system_status():
     """
     Returns current system status
     """
-    status = thermostat_logic.get_current_system_status()
+    status = thermostat_logic.get_thermostat().get_hvac_status()
     response = jsonify({'status': status})
     return response
 

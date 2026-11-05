@@ -1,137 +1,114 @@
-from datetime import datetime
+"""Client for the Google Smart Device Management (Nest) API."""
+
+from __future__ import annotations
+
+from functools import lru_cache
+from typing import Any
+
 import requests
-import json
 
 from pi_logic.config import NestCredentials
 
-token = ''
-current_status = ''
+OAUTH_URL = "https://www.googleapis.com/oauth2/v4/token"
+SDM_BASE_URL = "https://smartdevicemanagement.googleapis.com/v1"
+HVAC_TRAIT = "sdm.devices.traits.ThermostatHvac"
+FAN_COMMAND = "sdm.devices.commands.Fan.SetTimer"
+
+REQUEST_TIMEOUT_SECONDS = 10
+FAN_DURATION_SECONDS = 900
 
 
-def get_new_token():
-    """
-    Sends a post request to authenticate and retrieve the oauth access token.
-    """
-    global token, current_status
-
-    oauth_url = 'https://www.googleapis.com/oauth2/v4/token'
-
-    data = {
-        'client_id': config.client_id,
-        'client_secret': config.client_secret,
-        'refresh_token': config.refresh_token,
-        'grant_type': 'refresh_token'
-    }
-
-    res = requests.post(url=oauth_url, data=data)
-    res_json = res.json()
-    token = f'{res_json["token_type"]} {res_json["access_token"]}'
+class ThermostatError(RuntimeError):
+    """The thermostat could not be reached or returned an unusable response."""
 
 
-def get_thermostat_status() -> str:
-    """
-    Uses the access token to retrieve the current status of the thermostat.
-    """
-    global token, current_status
+class NestThermostat:
+    """A single Nest thermostat, refreshing its OAuth access token as needed."""
 
-    status_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/' \
-                 f'{config.project_id}/devices/{config.device_id}'
+    def __init__(self, credentials: NestCredentials) -> None:
+        self._credentials = credentials
+        self._session = requests.Session()
+        self._access_token: str | None = None
+        self._device_url = (
+            f"{SDM_BASE_URL}/enterprises/{credentials.project_id}/devices/{credentials.device_id}"
+        )
 
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': token
-    }
+    def get_hvac_status(self) -> str:
+        """Return the current HVAC state: ``HEATING``, ``COOLING`` or ``OFF``."""
+        device = self._request("GET", self._device_url)
+        try:
+            return device["traits"][HVAC_TRAIT]["status"]
+        except (KeyError, TypeError) as error:
+            raise ThermostatError("Device response has no HVAC status") from error
 
-    try:  # try to make a request to the api, if it fails get a new key
-        res = requests.get(status_url, headers=headers)
-        response_as_json = res.json()
-        # print(f'hvac response: \n {json.dumps(response_as_json, indent=2)}')
+    def run_fan(self, duration_seconds: int = FAN_DURATION_SECONDS) -> None:
+        """Run the HVAC fan on its own for the given duration."""
+        self._request(
+            "POST",
+            f"{self._device_url}:executeCommand",
+            json={
+                "command": FAN_COMMAND,
+                "params": {"timerMode": "ON", "duration": f"{duration_seconds}s"},
+            },
+        )
 
-        if 'error' in response_as_json:
-            response_status = response_as_json['error']['status']
+    def _request(self, method: str, url: str, **kwargs: Any) -> dict:
+        """Send an authorized API request, refreshing an expired token at most once."""
+        if self._access_token is None:
+            self._refresh_access_token()
 
-            print(f'Response status: {response_status}')
+        response = self._send(method, url, **kwargs)
+        if response.status_code == requests.codes.unauthorized:
+            self._refresh_access_token()
+            response = self._send(method, url, **kwargs)
 
-            if response_status == 'UNAUTHENTICATED':
-                raise ConnectionRefusedError
-        else:
-            current_status = response_as_json['traits']['sdm.devices.traits.ThermostatHvac']['status']
-            print(f'Current HVAC status: {current_status} on {datetime.now()}')
+        if not response.ok:
+            raise ThermostatError(f"Nest API returned HTTP {response.status_code}")
+        return self._parse_json(response)
 
-    except ConnectionRefusedError:
-        print('Connection refused. Generating new token and trying again.')
-        get_new_token()
-        get_thermostat_status()
+    def _send(self, method: str, url: str, **kwargs: Any) -> requests.Response:
+        headers = {"Authorization": f"Bearer {self._access_token}"}
+        try:
+            return self._session.request(
+                method, url, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS, **kwargs
+            )
+        except requests.RequestException as error:
+            raise ThermostatError(f"Could not reach the Nest API: {error}") from error
 
-    except KeyError as e:
-        print(f'Key error: {e}')
-        pass
+    def _refresh_access_token(self) -> None:
+        try:
+            response = self._session.post(
+                OAUTH_URL,
+                data={
+                    "client_id": self._credentials.client_id,
+                    "client_secret": self._credentials.client_secret,
+                    "refresh_token": self._credentials.refresh_token,
+                    "grant_type": "refresh_token",
+                },
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+        except requests.RequestException as error:
+            # Only the type: the exception text can include the request details.
+            raise ThermostatError(
+                f"Could not reach the OAuth server: {type(error).__name__}"
+            ) from None
 
-    except ConnectionError:
-        print('Connection error. Generating new token and trying again.')
-        get_new_token()
-        get_thermostat_status()
+        if not response.ok:
+            raise ThermostatError(f"Token refresh failed with HTTP {response.status_code}")
+        try:
+            self._access_token = self._parse_json(response)["access_token"]
+        except KeyError:
+            raise ThermostatError("Token response has no access token") from None
 
-    return current_status
-
-def run_fan_only():
-    global token
-
-    fan_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/' \
-              f'{config.project_id}/devices/{config.device_id}:executeCommand'
-
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': token
-    }
-
-    data = "{ 'command': 'sdm.devices.commands.Fan.SetTimer', " \
-           "'params': { 'timerMode': 'ON', 'duration': '900s' } }"
-
-    try:
-        response = requests.post(url=fan_url, headers=headers, data=data)
-        response_as_json = response.json()
-        
-        if 'error' in response_as_json:
-            response_status = response_as_json['error']['status']
-
-            print(f'Response status: {response_status}')
-
-            if response_status == 'UNAUTHENTICATED':
-                raise ConnectionRefusedError
-            
-        print('Fan running for 15 minutes...')
-        
-    except ConnectionRefusedError:
-        print('Connection refused. Generating new token and trying again.')
-        get_new_token()
-        run_fan_only()
-
-    except KeyError as e:
-        print(f'Key error: {e}')
-        pass
-
-    except ConnectionError:
-        print('Connection error. Generating new token and trying again.')
-        get_new_token()
-        run_fan_only()
+    @staticmethod
+    def _parse_json(response: requests.Response) -> dict:
+        try:
+            return response.json()
+        except ValueError as error:
+            raise ThermostatError("Response was not valid JSON") from error
 
 
-def check_hvac_connectivity():
-    device_list_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.project_id}/devices'
-
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': token
-    }
-
-    res = requests.get(url=device_list_url, headers=headers)
-    # res_json = res.json()
-    # print(f'connectivity data: \n {json.dumps(res_json, indent=2)}')
-
-
-def get_current_system_status():
-    return current_status
-
-
-config = NestCredentials.from_env()
+@lru_cache(maxsize=1)
+def get_thermostat() -> NestThermostat:
+    """Return the shared thermostat client, so its access token is reused between calls."""
+    return NestThermostat(NestCredentials.from_env())

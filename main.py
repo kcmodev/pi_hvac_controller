@@ -1,4 +1,4 @@
-from pi_logic.thermostat_logic import get_thermostat_status
+from pi_logic.thermostat_logic import get_thermostat
 from pi_logic.motor_logic import cycle_sprayer_motor
 from time import sleep
 from datetime import datetime
@@ -15,7 +15,7 @@ def check_hvac_status():
     
     if 7 < current_hour < 22:
         # only automatically check status during the day
-        current_hvac_status = get_thermostat_status()
+        current_hvac_status = get_thermostat().get_hvac_status()
 
         if current_hvac_status == 'COOLING' or current_hvac_status == 'HEATING':
             print(
