@@ -2,6 +2,8 @@ from datetime import datetime
 import requests
 import json
 
+from pi_logic.config import NestCredentials
+
 token = ''
 current_status = ''
 
@@ -15,9 +17,9 @@ def get_new_token():
     oauth_url = 'https://www.googleapis.com/oauth2/v4/token'
 
     data = {
-        'client_id': config.CLIENT_ID,
-        'client_secret': config.CLIENT_SECRET,
-        'refresh_token': config.REFRESH_TOKEN,
+        'client_id': config.client_id,
+        'client_secret': config.client_secret,
+        'refresh_token': config.refresh_token,
         'grant_type': 'refresh_token'
     }
 
@@ -33,7 +35,7 @@ def get_thermostat_status() -> str:
     global token, current_status
 
     status_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/' \
-                 f'{config.PROJECT_ID}/devices/{config.DEVICE_ID}'
+                 f'{config.project_id}/devices/{config.device_id}'
 
     headers = {
         'Content-Type': 'application/json',
@@ -76,7 +78,7 @@ def run_fan_only():
     global token
 
     fan_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/' \
-              f'{config.PROJECT_ID}/devices/{config.DEVICE_ID}:executeCommand'
+              f'{config.project_id}/devices/{config.device_id}:executeCommand'
 
     headers = {
         'Content-Type': 'application/json',
@@ -116,7 +118,7 @@ def run_fan_only():
 
 
 def check_hvac_connectivity():
-    device_list_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.PROJECT_ID}/devices'
+    device_list_url = f'https://smartdevicemanagement.googleapis.com/v1/enterprises/{config.project_id}/devices'
 
     headers = {
         'Content-Type': 'application/json',
@@ -132,11 +134,4 @@ def get_current_system_status():
     return current_status
 
 
-if __name__ == 'pi_hvac_controller.pi_logic.thermostat_logic':
-    """
-    Corrects import to parent folder when importing with Flask from /venv/bin/activate.
-    """
-    from ..config_settings import config
-
-elif __name__ == 'pi_logic.thermostat_logic':
-    from config_settings import config
+config = NestCredentials.from_env()
