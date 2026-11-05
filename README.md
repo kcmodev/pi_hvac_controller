@@ -2,7 +2,7 @@
 
 A Raspberry Pi that freshens a whole house using the air conditioning. It polls a Nest thermostat through Google's Smart Device Management API, and whenever the system is heating or cooling, it drives a motor that presses an air freshener can aimed at the air filter in the return duct. The running HVAC system then carries the scent through the house.
 
-A small web page also lets you trigger a spray from your phone and check on the system.
+A small web page also lets you trigger a spray from your phone and check on the system. [hvac_front_end](https://github.com/kcmodev/hvac_front_end) is a separate React client for the same API.
 
 ## How it works
 
@@ -106,6 +106,7 @@ Settings are read from the environment or a `.env` file.
 | `HOST` | No | `0.0.0.0` | Web app bind address |
 | `PORT` | No | `5000` | Web app port |
 | `SPRAY_DB_PATH` | No | `db.json` in the project root | Spray history file |
+| `CORS_ALLOWED_ORIGIN` | No | Off | Origin of a separately hosted frontend allowed to read API responses |
 
 ## API
 

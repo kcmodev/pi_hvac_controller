@@ -99,3 +99,17 @@ def test_missing_credentials_are_reported_as_unavailable(client, monkeypatch):
     monkeypatch.setattr(web, "get_thermostat", MagicMock(side_effect=ConfigError("Missing")))
 
     assert client.get("/status").status_code == 503
+
+
+def test_cross_origin_access_is_off_by_default(client, monkeypatch):
+    monkeypatch.delenv("CORS_ALLOWED_ORIGIN", raising=False)
+
+    assert "Access-Control-Allow-Origin" not in client.get("/timestamp").headers
+
+
+def test_configured_origin_can_read_success_and_error_responses(client, sprayer, monkeypatch):
+    monkeypatch.setenv("CORS_ALLOWED_ORIGIN", "http://frontend.local")
+    sprayer.side_effect = SprayerBusyError("The sprayer is already running")
+
+    for response in (client.get("/timestamp"), client.post("/spray")):
+        assert response.headers["Access-Control-Allow-Origin"] == "http://frontend.local"

@@ -17,6 +17,15 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 
+@app.after_request
+def allow_configured_origin(response):
+    """Let a separately hosted frontend read responses, if one has been configured."""
+    origin = os.environ.get("CORS_ALLOWED_ORIGIN")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+    return response
+
+
 @app.errorhandler(SprayerBusyError)
 def handle_sprayer_busy(error):
     return jsonify(error=str(error)), 409
