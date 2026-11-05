@@ -1,7 +1,5 @@
 # Automatic HVAC Air Freshener
 
-[![CI](https://github.com/kcmodev/pi_hvac_controller/actions/workflows/ci.yml/badge.svg)](https://github.com/kcmodev/pi_hvac_controller/actions/workflows/ci.yml)
-
 A Raspberry Pi that freshens a whole house using the air conditioning. It polls a Nest thermostat through Google's Smart Device Management API, and whenever the system is heating or cooling, it drives a motor that presses an air freshener can aimed at the air filter in the return duct. The running HVAC system then carries the scent through the house.
 
 A small web page also lets you trigger a spray from your phone and check on the system.
@@ -47,7 +45,7 @@ flowchart LR
 
 - **Failures never trigger a spray.** Any thermostat error raises `ThermostatError` rather than falling back to a previous reading, so a stale `COOLING` can't cause a spray.
 - **One sprayer, two processes.** A non-blocking file lock stops the web app and monitor from driving the motor at the same time. The second caller gets `SprayerBusyError`, which the API returns as `409 Conflict`. GPIO pins are held only during a spray so the other process can open them next.
-- **Hardware is simulated off the Pi.** gpiozero's mock pin factory lets the real motor code run in tests and CI, including checks of the speed sequence.
+- **Hardware is simulated off the Pi.** gpiozero's mock pin factory lets the real motor code run in tests, including checks of the speed sequence.
 
 ## Hardware
 
@@ -129,8 +127,6 @@ pytest
 ruff check .
 ruff format --check .
 ```
-
-CI runs the same checks on every push to `main` and on every pull request.
 
 To run the web app away from a Pi, uncomment the `GPIOZERO_*` lines in `.env`. The page loads without credentials, and reports the thermostat as unavailable.
 
