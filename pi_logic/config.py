@@ -17,6 +17,11 @@ class ConfigError(RuntimeError):
     """A required setting is missing."""
 
 
+def spray_db_path() -> Path:
+    """Return the location of the spray history database."""
+    return Path(os.environ.get("SPRAY_DB_PATH", PROJECT_ROOT / "db.json"))
+
+
 @dataclass(frozen=True)
 class NestCredentials:
     """OAuth client and device identifiers for the Smart Device Management API."""
