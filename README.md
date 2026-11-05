@@ -2,7 +2,7 @@
 
 A Raspberry Pi that freshens a whole house using the air conditioning. It polls a Nest thermostat through Google's Smart Device Management API, and whenever the system is heating or cooling, it drives a motor that presses an air freshener can aimed at the air filter in the return duct. The running HVAC system then carries the scent through the house.
 
-A small web page also lets you trigger a spray from your phone and check on the system. [hvac_front_end](https://github.com/kcmodev/hvac_front_end) is a separate React client for the same API.
+This repository is the backend. It exposes an HTTP API for triggering a spray and checking on the system, and [hvac_front_end](https://github.com/kcmodev/hvac_front_end) is the React web interface that uses it.
 
 ## How it works
 
@@ -11,11 +11,11 @@ Two independent processes share the same hardware and spray history:
 ```mermaid
 flowchart LR
     Nest[Nest thermostat<br/>Google SDM API]
-    Phone[Phone browser]
+    Frontend[hvac_front_end<br/>React web interface]
 
     subgraph Pi[Raspberry Pi]
         Monitor[main.py<br/>monitor loop]
-        Web[app.py<br/>Flask web app]
+        Web[app.py<br/>Flask API]
         Lock{{sprayer lock}}
         DB[(db.json<br/>last spray)]
         Motor[Sprayer motor]
@@ -23,7 +23,7 @@ flowchart LR
 
     Monitor -- polls status --> Nest
     Web -- reads status, starts fan --> Nest
-    Phone -- HTTP --> Web
+    Frontend -- HTTP --> Web
     Monitor --> Lock
     Web --> Lock
     Lock --> Motor
@@ -39,12 +39,12 @@ flowchart LR
 | HVAC idle | Nothing | 5 minutes |
 | Thermostat unreachable | Log a warning | 5 minutes |
 
-**The web app** (`app.py`) handles manual sprays. Since no air may be moving when the button is pressed, it first runs the HVAC fan for 15 minutes, waits 10 seconds for airflow, then sprays. If the fan can't be started, it doesn't spray.
+**The API** (`app.py`) handles manual sprays. Since no air may be moving when one is requested, it first runs the HVAC fan for 15 minutes, waits 10 seconds for airflow, then sprays. If the fan can't be started, it doesn't spray.
 
 ### Design notes
 
 - **Failures never trigger a spray.** Any thermostat error raises `ThermostatError` rather than falling back to a previous reading, so a stale `COOLING` can't cause a spray.
-- **One sprayer, two processes.** A non-blocking file lock stops the web app and monitor from driving the motor at the same time. The second caller gets `SprayerBusyError`, which the API returns as `409 Conflict`. GPIO pins are held only during a spray so the other process can open them next.
+- **One sprayer, two processes.** A non-blocking file lock stops the API and monitor from driving the motor at the same time. The second caller gets `SprayerBusyError`, which the API returns as `409 Conflict`. GPIO pins are held only during a spray so the other process can open them next.
 - **Hardware is simulated off the Pi.** gpiozero's mock pin factory lets the real motor code run in tests, including checks of the speed sequence.
 
 ## Hardware
@@ -89,8 +89,10 @@ Start each process, in its own terminal or as a service:
 
 ```bash
 python main.py   # monitor loop
-python app.py    # web app, at http://<pi-address>:5000
+python app.py    # API, at http://<pi-address>:5000
 ```
+
+To use the web interface, set up [hvac_front_end](https://github.com/kcmodev/hvac_front_end) and set `CORS_ALLOWED_ORIGIN` to the address it's served from.
 
 ## Configuration
 
@@ -103,16 +105,15 @@ Settings are read from the environment or a `.env` file.
 | `NEST_REFRESH_TOKEN` | Yes | | OAuth refresh token |
 | `NEST_PROJECT_ID` | Yes | | Device Access project ID |
 | `NEST_DEVICE_ID` | Yes | | Thermostat device ID |
-| `HOST` | No | `0.0.0.0` | Web app bind address |
-| `PORT` | No | `5000` | Web app port |
+| `HOST` | No | `0.0.0.0` | API bind address |
+| `PORT` | No | `5000` | API port |
 | `SPRAY_DB_PATH` | No | `db.json` in the project root | Spray history file |
-| `CORS_ALLOWED_ORIGIN` | No | Off | Origin of a separately hosted frontend allowed to read API responses |
+| `CORS_ALLOWED_ORIGIN` | For the frontend | Off | Address the frontend is served from. Browsers block it from reading responses until this is set |
 
 ## API
 
 | Method | Path | Description | Responses |
 | --- | --- | --- | --- |
-| `GET` | `/` | Control page | `200` |
 | `POST` | `/spray` | Run the fan and spray. Takes about 15 seconds | `200` `{"date", "time"}`, `409` busy, `502` thermostat error, `503` not configured |
 | `GET` | `/timestamp` | Most recent spray | `200` `{"date", "time"}`, `404` none yet |
 | `GET` | `/status` | Current HVAC state | `200` `{"status"}`, `502` thermostat error, `503` not configured |
@@ -129,23 +130,22 @@ ruff check .
 ruff format --check .
 ```
 
-To run the web app away from a Pi, uncomment the `GPIOZERO_*` lines in `.env`. The page loads without credentials, and reports the thermostat as unavailable.
+To run the API away from a Pi, uncomment the `GPIOZERO_*` lines in `.env`. Without credentials, the thermostat routes respond with `503`.
 
 ```
-├── app.py                  Web app and API routes
+├── app.py                  API routes
 ├── main.py                 Monitor loop and scheduling rules
 ├── pi_logic/
 │   ├── config.py           Environment-based settings
 │   ├── motor_logic.py      Motor control and the sprayer lock
 │   ├── spray_log.py        Last spray persistence (TinyDB)
 │   └── thermostat_logic.py Nest API client
-├── static/, templates/     Control page
 └── tests/
 ```
 
 ## Security
 
-The web app has no authentication and runs on Flask's development server. Anyone who can reach it can trigger the sprayer and read the HVAC status, so keep it on a trusted home network and never expose it to the internet. `.env` holds a long-lived refresh token and is ignored by git; never commit it.
+The API has no authentication and runs on Flask's development server. Anyone who can reach it can trigger the sprayer and read the HVAC status, so keep it on a trusted home network and never expose it to the internet. `.env` holds a long-lived refresh token and is ignored by git; never commit it.
 
 ## License
 

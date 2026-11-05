@@ -28,11 +28,8 @@ def sprayer(monkeypatch):
     return fake
 
 
-def test_index_serves_the_control_page(client):
-    response = client.get("/")
-
-    assert response.status_code == 200
-    assert b"Air Freshener" in response.data
+def test_api_serves_no_web_page(client):
+    assert client.get("/").status_code == 404
 
 
 def test_spray_runs_a_cycle_and_returns_its_time(client, sprayer):

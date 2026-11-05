@@ -38,7 +38,7 @@ class SprayerBusyError(RuntimeError):
 
 @contextmanager
 def _exclusive_sprayer() -> Iterator[None]:
-    """Claim the sprayer across processes, since the web app and monitor both drive it."""
+    """Claim the sprayer across processes, since the API and monitor both drive it."""
     with open(spray_db_path().with_suffix(".lock"), "w") as lock_file:
         try:
             fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)

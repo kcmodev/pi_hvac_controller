@@ -1,11 +1,11 @@
-"""Web interface for triggering the sprayer and checking on the system."""
+"""HTTP API for triggering the sprayer and checking on the system."""
 
 from __future__ import annotations
 
 import logging
 import os
 
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify
 
 from pi_logic.config import ConfigError
 from pi_logic.motor_logic import SprayerBusyError, cycle_sprayer_manually
@@ -19,7 +19,7 @@ app = Flask(__name__)
 
 @app.after_request
 def allow_configured_origin(response):
-    """Let a separately hosted frontend read responses, if one has been configured."""
+    """Let the frontend, which is hosted separately, read responses."""
     origin = os.environ.get("CORS_ALLOWED_ORIGIN")
     if origin:
         response.headers["Access-Control-Allow-Origin"] = origin
@@ -42,12 +42,6 @@ def handle_thermostat_error(error):
 def handle_config_error(error):
     logger.error("%s. See .env.example.", error)
     return jsonify(error="Thermostat credentials are not configured"), 503
-
-
-@app.get("/")
-def index():
-    """Serve the control page."""
-    return render_template("index.html")
 
 
 @app.post("/spray")
@@ -74,5 +68,5 @@ def status():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    # Reachable from other devices so it can be used from a phone. See "Security" in the README.
+    # Reachable from other devices, since browsers call it directly. See "Security" in the README.
     app.run(host=os.environ.get("HOST", "0.0.0.0"), port=int(os.environ.get("PORT", "5000")))

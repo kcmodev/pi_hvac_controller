@@ -1,4 +1,4 @@
-"""Persists the time of the most recent spray, shared by the web app and the monitor."""
+"""Persists the time of the most recent spray, shared by the API and the monitor."""
 
 from __future__ import annotations
 
