@@ -1,40 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>AC Control</title>
-    <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Control panel for a Raspberry Pi HVAC air freshener">
+    <title>HVAC Air Freshener</title>
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   </head>
   <body>
-    <div class="container">
-      <h1>Manual Air Freshener</h1>
-    </div>
+    <main class="panel">
+      <h1>HVAC Air Freshener</h1>
 
-{#    <div class="container">#}
-{#        <h3>System Status: </h3>#}
-{#    </div>#}
-{#    <div class="container">#}
-{#        <h3>Last Spray: {{ last_spray_time }}</h3>#}
-{#    </div>#}
+      <dl class="readings">
+        <div>
+          <dt>System status</dt>
+          <dd id="system-status">Loading…</dd>
+        </div>
+        <div>
+          <dt>Last spray</dt>
+          <dd id="last-spray">Loading…</dd>
+        </div>
+      </dl>
 
-    <div class="container">
-        <button class="spray_air_freshener">Spray</button>
-    </div>
-{#    <div class="container">#}
-{#        <h3>Start automatic spray system</h3>#}
-{#        <button class="start_main_loop" disabled>Start</button>#}
-{#    </div>#}
-{#    <div class="container">#}
-{#        <h3>Stop automatic spray system</h3>#}
-{#        <button class="stop_main_loop" disabled>Stop</button>#}
-{#    </div>#}
-    
-    
-    
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" async defer></script>
-    <script src="{{ url_for('static', filename='index.js')}}" async defer></script>
+      <button id="spray-button" type="button">Spray now</button>
+      <p id="message" class="message" role="status"></p>
+    </main>
+
+    <script src="{{ url_for('static', filename='index.js') }}" defer></script>
   </body>
 </html>

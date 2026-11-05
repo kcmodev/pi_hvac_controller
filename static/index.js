@@ -1,37 +1,54 @@
-/**
- * Ajax call to run function to activate sprayer on button press.
- */
-document
-  .querySelector(".spray_air_freshener")
-  .addEventListener("click", (e) => {
-    e.preventDefault();
-    let manualActivation = true;
+const systemStatus = document.querySelector("#system-status");
+const lastSpray = document.querySelector("#last-spray");
+const sprayButton = document.querySelector("#spray-button");
+const message = document.querySelector("#message");
 
-    $.post(`/spray_air_freshener/`, { params: manualActivation }, () => {
-      console.log("Spray button clicked...");
-    });
-  });
+/** Fetches JSON, rejecting with the server's error message on a failed response. */
+async function requestJson(url, options) {
+  const response = await fetch(url, options);
+  const body = await response.json();
+  if (!response.ok) {
+    const error = new Error(body.error);
+    error.status = response.status;
+    throw error;
+  }
+  return body;
+}
 
-/**
- * Ajax call to run main event loop on button press.
- */
-// document.querySelector('.start_main_loop').addEventListener('click', (e) => {
-//     e.preventDefault()
-//     $.post('/start_main_loop',
-//       function(data) {
-//         console.log('Start button clicked...')
-//   });
-//   return false;
-// });
+function showLastSpray({ date, time }) {
+  lastSpray.textContent = `${date} at ${time}`;
+}
 
-/**
- * Ajax call to run main event loop on button press.
- */
-// document.querySelector('.stop_main_loop').addEventListener('click', (e) => {
-//   e.preventDefault()
-//   $.post('/stop_main_loop',
-//       function(data) {
-//         console.log('Stop button clicked...')
-//   });
-//   return false;
-// });
+async function loadSystemStatus() {
+  try {
+    const { status } = await requestJson("/status");
+    systemStatus.textContent = status;
+  } catch {
+    systemStatus.textContent = "Unavailable";
+  }
+}
+
+async function loadLastSpray() {
+  try {
+    showLastSpray(await requestJson("/timestamp"));
+  } catch (error) {
+    lastSpray.textContent = error.status === 404 ? "Never" : "Unavailable";
+  }
+}
+
+async function spray() {
+  sprayButton.disabled = true;
+  message.textContent = "Starting the fan, then spraying…";
+  try {
+    showLastSpray(await requestJson("/spray", { method: "POST" }));
+    message.textContent = "Done.";
+  } catch (error) {
+    message.textContent = error.message || "Could not reach the controller.";
+  } finally {
+    sprayButton.disabled = false;
+  }
+}
+
+sprayButton.addEventListener("click", spray);
+loadSystemStatus();
+loadLastSpray();
