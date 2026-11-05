@@ -145,3 +145,7 @@ To run the web app away from a Pi, uncomment the `GPIOZERO_*` lines in `.env`. T
 ## Security
 
 The web app has no authentication and runs on Flask's development server. Anyone who can reach it can trigger the sprayer and read the HVAC status, so keep it on a trusted home network and never expose it to the internet. `.env` holds a long-lived refresh token and is ignored by git; never commit it.
+
+## License
+
+[MIT](LICENSE)
