@@ -1,0 +1,5 @@
+Flask>=3.0,<4
+gpiozero>=2.0,<3
+python-dotenv>=1.0,<2
+requests>=2.31,<3
+tinydb>=4.8,<5

@@ -1,4 +1,21 @@
-.idea
-__pycache__
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+venv/
+.venv/
+
+# Secrets and local configuration
+.env
+# Legacy credentials file; superseded by .env but may still exist on deployed Pis
 config_settings/config.py
-venv
+
+# Runtime state
+db.json
+*.lock
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
