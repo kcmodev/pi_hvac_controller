@@ -1,112 +1,69 @@
-import flask
-from flask import Flask, jsonify
-from tinydb import TinyDB, Query
-from datetime import datetime
-from pi_logic import motor_logic, thermostat_logic
-import json
+"""Web interface for triggering the sprayer and checking on the system."""
+
+from __future__ import annotations
+
+import logging
+import os
+
+from flask import Flask, jsonify, render_template
+
+from pi_logic.config import ConfigError
+from pi_logic.motor_logic import SprayerBusyError, cycle_sprayer_manually
+from pi_logic.spray_log import last_spray
+from pi_logic.thermostat_logic import ThermostatError, get_thermostat
+
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-db = TinyDB('./db.json')
-table = db.table('spray_timestamp')
-Spray = Query()
 
 
-@app.route('/spray', methods=['POST'])
-def spray_air_freshener():
-    """
-    Request to cycle sprayer motor.
-    """
-    
-    # motor_logic.cycle_sprayer_manually()
-    print('POST to sprayer endpoint')
-    date = datetime.now().strftime('%m/%d/%y')
-    time = datetime.now().strftime('%H:%M:%S')
-
-    check_and_insert(date, time)
-
-    response = jsonify({'date': date, 'time': time})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-
-    return response
+@app.errorhandler(SprayerBusyError)
+def handle_sprayer_busy(error):
+    return jsonify(error=str(error)), 409
 
 
-@app.route('/timestamp', methods=['GET', 'POST'])
-def get_last_time_sprayed():
-    """
-    Return last time sprayers was cycled
-    """
-    if flask.request.method == 'GET':
-        last_sprayed_time = table.all()[0]['time']
-        last_sprayed_date = table.all()[0]['date']
-        response = jsonify({'time': last_sprayed_time, 'date': last_sprayed_date})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-
-        print(f'GET last time sprayed: {last_sprayed_time}')
-        return response
-
-    elif flask.request.method == 'POST':
-        data = flask.request.json
-        date = data['date']
-        time = data['time']
-
-        check_and_insert(date, time)
-
-        response = jsonify({'success': True, 'data': data})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-
-        print(f'POST data to db: date = {date} || time = {time}')
-        return response
+@app.errorhandler(ThermostatError)
+def handle_thermostat_error(error):
+    # The cause can include device URLs, so it goes to the log rather than the client.
+    logger.warning("Thermostat request failed: %s", error)
+    return jsonify(error="Could not reach the thermostat"), 502
 
 
-@app.route('/status', methods=['GET'])
-def get_system_status():
-    """
-    Returns current system status
-    """
-    status = thermostat_logic.get_thermostat().get_hvac_status()
-    response = jsonify({'status': status})
-    return response
+@app.errorhandler(ConfigError)
+def handle_config_error(error):
+    logger.error("%s. See .env.example.", error)
+    return jsonify(error="Thermostat credentials are not configured"), 503
 
 
-@app.route('/start', methods=['POST'])
-def start_main_loop():
-    """
-    Starts main loop background process
-    """
-    try:
-        # main_loop.start()
-        print("Main loop started.")
-    except AssertionError:
-        print("Main loop is already running.")
-        return json.dumps({'success': False}), 400, {'ContentType': 'application/json'}
-
-    return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
+@app.get("/")
+def index():
+    """Serve the control page."""
+    return render_template("index.html")
 
 
-@app.route("/stop", methods=['POST'])
-def stop_main_loop():
-    """
-    Terminates main loop process
-    """
-    try:
-        # main_loop.terminate()
-        print("Main loop terminated.")
-    except AttributeError:
-        print("Main loop not running.")
-        return json.dumps({'success': False}), 400, {'ContentType': 'application/json'}
-    return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
+@app.post("/spray")
+def spray():
+    """Start the fan and run a spray cycle, returning its time once complete."""
+    cycle_sprayer_manually()
+    return jsonify(last_spray())
 
 
-def check_and_insert(date, time):
-    if len(table.all()) > 0:
-        print(f'updating db entry to: date={date} || time={time}')
-        # table.update({'date': date, 'time': time})
-        # print(f'updated db entry: {table.all()[0]}')
-    else:
-        print(f'db search: {table.all()}')
-        # table.insert({'date': f"{date}", 'time': f'{time}'})
+@app.get("/timestamp")
+def timestamp():
+    """Return the time of the most recent spray."""
+    latest = last_spray()
+    if latest is None:
+        return jsonify(error="No sprays recorded"), 404
+    return jsonify(latest)
 
 
-if __name__ == '__main__':
-    # main_loop = Process(target=main.start_main_hvac_event_loop(), daemon=True)
-    app.run(host='0.0.0.0', port=80, load_dotenv=True, debug=True)
+@app.get("/status")
+def status():
+    """Return the current state of the HVAC system."""
+    return jsonify(status=get_thermostat().get_hvac_status())
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    # Reachable from other devices so it can be used from a phone. See "Security" in the README.
+    app.run(host=os.environ.get("HOST", "0.0.0.0"), port=int(os.environ.get("PORT", "5000")))
